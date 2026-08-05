@@ -11,27 +11,23 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        # Route for Auth Service
         - id: auth-service
-          uri: lb://auth-service
+          uri: lb://AUTH-SERVICE
           predicates:
             - Path=/api/auth/**
             
-        # Route for Catalog Service
         - id: catalog-service
-          uri: lb://catalog-service
+          uri: lb://CATALOG-SERVICE
           predicates:
             - Path=/api/catalog/**
             
-        # Route for Order Service
         - id: order-service
-          uri: lb://order-service
+          uri: lb://ORDER-SERVICE
           predicates:
             - Path=/api/orders/**
-            
-        # Route for Trending Service
+
         - id: trending-service
-          uri: lb://trending-service
+          uri: lb://TRENDING-SERVICE
           predicates:
             - Path=/api/trending/**
 
@@ -39,5 +35,5 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
+    fetch-registry: true
+    register-with-eureka: true

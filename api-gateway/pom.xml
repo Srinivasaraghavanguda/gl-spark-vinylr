@@ -5,41 +5,35 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.1.0</version>
+		<version>3.3.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.gl.vinylr</groupId>
 	<artifactId>api-gateway</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+	<name>api-gateway</name>
+	<description>API Gateway for VinylR</description>
 	<properties>
 		<java.version>21</java.version>
-		<spring-cloud.version>2025.1.2</spring-cloud.version>
+		<spring-cloud.version>2023.0.3</spring-cloud.version>
 	</properties>
 	<dependencies>
+		<!-- Core Gateway -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-gateway-server-webmvc</artifactId>
+			<artifactId>spring-cloud-starter-gateway</artifactId>
 		</dependency>
+		<!-- Eureka Discovery -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
-
+		<!-- Load Balancer for lb:// routing -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-loadbalancer</artifactId>
+		</dependency>
+		<!-- Testing -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -57,7 +51,6 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
 	<build>
 		<plugins>
 			<plugin>
@@ -66,5 +59,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
