@@ -2,17 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Truck, ShieldCheck, Star, RefreshCcw, Lock, Flame } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { catalogService } from "../api/catalogService";
 import FloatingVinyl from '../components/Aesthetics/FloatingVinyl';
 
 // --- IMAGE-READY MOCK DATA ---
 // To add your own images, just paste the URL/path into the 'image' field!
-const SLIDER_ITEMS = [
-  { id: 1, name: "Limited Edition Vinyl", image: "", color: "from-[#8B0E1A] to-[#E11D2E]", glow: "shadow-[#E11D2E]/50" },
-  { id: 2, name: "Premium Graphic Tee", image: "", color: "from-[#1A1A1A] to-[#4A4A4A]", glow: "shadow-white/20" },
-  { id: 3, name: "Concert Lightstick", image: "", color: "from-[#6A00FF] to-[#B146FF]", glow: "shadow-[#B146FF]/50" },
-  { id: 4, name: "Collectible Bear Toy", image: "", color: "from-[#E11D2E] to-[#8B0E1A]", glow: "shadow-[#E11D2E]/50" },
-  { id: 5, name: "Studio Microphone", image: "", color: "from-[#0A0A0A] to-[#2A2A2A]", glow: "shadow-white/10" }
-];
+
 
 const FEATURES = [
   { icon: Truck, title: "Free Shipping", desc: "On orders above ₹999" },
@@ -22,16 +17,6 @@ const FEATURES = [
   { icon: Lock, title: "Secure Payments", desc: "Safe & encrypted" }
 ];
 
-// Footer Marquee Data
-const TOP_SALES = [
-  { id: 1, name: "RaGaForge Cinematic OST", type: "Limited Vinyl", image: "" },
-  { id: 2, name: "Midnight Drive", type: "Album", image: "" },
-  { id: 3, name: "VinylR Essential Tee", type: "Apparel", image: "" },
-  { id: 4, name: "Neon Tour Lightstick", type: "Accessory", image: "" },
-  { id: 5, name: "Cosmic Wave LP", type: "Vinyl", image: "" },
-  { id: 6, name: "Studio Mic Pro", type: "Gear", image: "" },
-  { id: 7, name: "Retro City Cap", type: "Apparel", image: "" }
-];
 
 const TOP_ARTISTS = [
   { id: 1, name: "The Weeknd", tag: "Pop / R&B", image: "" },
@@ -45,14 +30,51 @@ const TOP_ARTISTS = [
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+const [sliderItems, setSliderItems] = useState([]);
+const [topSales, setTopSales] = useState([]);
 
   // Auto-rotate slider every 3.5 seconds
   useEffect(() => {
+
+    const loadAlbums = async () => {
+
+    try {
+
+        const albums = await catalogService.getAllAlbums();
+
+if (albums && albums.length > 0) {
+
+    setSliderItems(albums.slice(0, 5));
+
+    setTopSales(albums);
+
+}
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+};
+
+    loadAlbums();
+
+}, []);
+
+useEffect(() => {
+
+    if (sliderItems.length === 0) return;
+
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % SLIDER_ITEMS.length);
+
+        setCurrentSlide((prev) => (prev + 1) % sliderItems.length);
+
     }, 3500);
+
     return () => clearInterval(timer);
-  }, []);
+
+}, [sliderItems]);
 
   return (
     <div className="min-h-screen bg-[#0B0B0F] text-white pt-20 font-['Oswald'] overflow-x-hidden relative">
@@ -132,40 +154,77 @@ const Home = () => {
                 animate={{ opacity: 1, x: 0, rotateY: 0, scale: 1 }}
                 exit={{ opacity: 0, x: -200, rotateY: 30, scale: 0.8 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
-                className={`w-[320px] h-[450px] sm:w-[400px] rounded-3xl border border-white/10 bg-gradient-to-br ${SLIDER_ITEMS[currentSlide].color} shadow-2xl ${SLIDER_ITEMS[currentSlide].glow} flex flex-col relative overflow-hidden group`}
+                className="w-[320px] h-[450px] sm:w-[400px] rounded-3xl border border-white/10 bg-gradient-to-br from-[#8B0E1A] to-[#E11D2E] shadow-2xl shadow-[#E11D2E]/50 flex flex-col relative overflow-hidden group"
               >
                 {/* IMAGE RENDERING LOGIC */}
-                <div className="absolute inset-0 z-0">
-                  {SLIDER_ITEMS[currentSlide].image ? (
-                    <img src={SLIDER_ITEMS[currentSlide].image} alt={SLIDER_ITEMS[currentSlide].name} className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-700" />
-                  ) : (
-                    <div className="w-full h-full bg-[#1A1A1A] flex flex-col items-center justify-center opacity-90 border-4 border-dashed border-white/10">
-                      <span className="text-white/30 text-sm font-bold tracking-widest uppercase">Insert Image Here</span>
-                    </div>
-                  )}
-                </div>
+<div className="absolute inset-0 z-0">
 
-                {/* Glossy Overlay & Branding */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0F]/90 via-transparent to-white/10 pointer-events-none z-10" />
-                <span className="absolute font-['Orbitron'] text-9xl text-white/5 font-black italic -rotate-12 select-none z-10 top-10 right-0">V</span>
+    {sliderItems[currentSlide]?.imageUrl ? (
 
-                <div className="relative z-20 mt-auto p-8 text-center">
-                  <h3 className="text-3xl font-bold text-white tracking-widest uppercase drop-shadow-lg">
-                    {SLIDER_ITEMS[currentSlide].name}
-                  </h3>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+        <img
+            src={sliderItems[currentSlide].imageUrl}
+            alt={sliderItems[currentSlide].title}
+            className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-700"
+        />
 
-            <div className="absolute -bottom-8 flex items-center justify-center gap-3 w-full">
-              {SLIDER_ITEMS.map((_, index) => (
-                <button 
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${index === currentSlide ? 'w-10 bg-[#E11D2E] shadow-[0_0_15px_rgba(225,29,46,0.8)]' : 'w-2 bg-white/20'}`}
-                />
-              ))}
-            </div>
+    ) : (
+
+        <div className="w-full h-full bg-[#1A1A1A] flex items-center justify-center border-4 border-dashed border-white/10">
+
+            <span className="text-white/30 text-sm font-bold uppercase">
+                No Image
+            </span>
+
+        </div>
+
+    )}
+
+</div>
+
+{/* Glossy Overlay */}
+<div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0F]/90 via-transparent to-white/10 pointer-events-none z-10" />
+
+<span className="absolute font-['Orbitron'] text-9xl text-white/5 font-black italic -rotate-12 select-none z-10 top-10 right-0">
+    V
+</span>
+
+<div className="relative z-20 mt-auto p-8 text-center">
+
+    <h3 className="text-3xl font-bold text-white tracking-widest uppercase drop-shadow-lg">
+
+        {sliderItems[currentSlide]?.title}
+
+    </h3>
+
+    <p className="text-[#B146FF] text-lg mt-2">
+
+        {sliderItems[currentSlide]?.artist}
+
+    </p>
+
+</div>
+
+</motion.div>
+
+</AnimatePresence>
+
+<div className="absolute -bottom-8 flex items-center justify-center gap-3 w-full">
+
+    {sliderItems.map((_, index) => (
+
+        <button
+            key={index}
+            onClick={() => setCurrentSlide(index)}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+                index === currentSlide
+                    ? "w-10 bg-[#E11D2E] shadow-[0_0_15px_rgba(225,29,46,0.8)]"
+                    : "w-2 bg-white/20"
+            }`}
+        />
+
+    ))}
+
+</div>
           </div>
         </div>
 
@@ -205,21 +264,21 @@ const Home = () => {
               animate={{ x: ["-50%", "0%"] }}
               transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
             >
-              {[...TOP_SALES, ...TOP_SALES].map((item, index) => (
+              {[...topSales, ...topSales].map((item, index) => (
                 <div key={`sales-${index}`} className="w-72 h-24 bg-[#120E14] border border-white/10 rounded-2xl p-3 flex items-center gap-4 flex-shrink-0 hover:border-[#E11D2E]/50 transition-colors cursor-pointer">
                   
                   {/* IMAGE RENDERING LOGIC */}
                   <div className="w-16 h-16 rounded-xl bg-[#1A1A1A] shadow-inner flex-shrink-0 relative overflow-hidden border border-white/5">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[8px] text-white/30 uppercase font-bold text-center">Img</div>
                     )}
                   </div>
 
                   <div className="flex flex-col overflow-hidden">
-                    <span className="text-[#E11D2E] text-[10px] font-bold uppercase tracking-widest mb-1">{item.type}</span>
-                    <h4 className="text-white text-sm font-semibold truncate tracking-wide">{item.name}</h4>
+                    <span className="text-[#E11D2E] text-[10px] font-bold uppercase tracking-widest mb-1">{item.genre}</span>
+                    <h4 className="text-white text-sm font-semibold truncate tracking-wide">{item.title}</h4>
                   </div>
                 </div>
               ))}

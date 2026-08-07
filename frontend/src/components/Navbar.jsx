@@ -22,6 +22,8 @@ const Navbar = () => {
   
   // Cart State
   const [cartItems, setCartItems] = useState([]);
+  const [username, setUsername] = useState("");
+  const [role, setRole] = useState("");
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,6 +50,22 @@ const Navbar = () => {
     return () => window.removeEventListener('cartUpdated', fetchCart);
   }, []);
 
+   // Load logged-in user information
+  useEffect(() => {
+    const loadUser = () => {
+        setUsername(localStorage.getItem("vinylr_user") || "");
+        setRole(localStorage.getItem("vinylr_role") || "");
+    };
+
+    loadUser();
+
+    window.addEventListener("storage", loadUser);
+
+    return () => {
+        window.removeEventListener("storage", loadUser);
+    };
+  }, []);
+
   // 3. Click Outside Listeners for Dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -72,11 +90,23 @@ const Navbar = () => {
 
   // Logout
   const handleLogout = () => {
-    localStorage.removeItem('vinylr_jwt');
-    toast.success('Successfully logged out.', { style: { background: '#120E14', color: '#fff', border: '1px solid #E11D2E' } });
+    localStorage.removeItem("vinylr_jwt");
+    localStorage.removeItem("vinylr_user");
+    localStorage.removeItem("vinylr_role");
+
+    window.dispatchEvent(new Event("storage"));
+
+    toast.success("Successfully logged out.", {
+        style: {
+            background: "#120E14",
+            color: "#fff",
+            border: "1px solid #E11D2E"
+        }
+    });
+
     setIsProfileOpen(false);
-    navigate('/login');
-  };
+    navigate("/login");
+};
 
   return (
     <nav className={`fixed w-full z-50 transition-all duration-500 font-['Oswald'] ${
@@ -145,7 +175,7 @@ const Navbar = () => {
                       cartItems.map(item => (
                         <div key={item.id} className="flex items-center gap-3 bg-[#0B0B0F]/50 p-2 rounded-xl border border-white/5">
                           <div className="w-12 h-12 bg-[#1A1A1A] rounded-lg flex items-center justify-center border border-white/10 text-[8px] text-white/40 font-bold uppercase overflow-hidden">
-                            {item.image ? <img src={item.image} alt={item.title} className="w-full h-full object-cover"/> : item.type || item.category || 'IMG'}
+                            {item.imageUrl ? <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover"/> : item.genre || item.category || 'IMG'}
                           </div>
                           <div className="flex-1 overflow-hidden">
                             <h4 className="text-white text-xs font-bold truncate">{item.title}</h4>
@@ -198,17 +228,27 @@ const Navbar = () => {
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <h3 className="text-white font-bold text-lg tracking-wide">Audiofile User</h3>
-                    <p className="text-[#BF953F] text-xs tracking-widest font-light">user@vinylr.com</p>
+                    <h3 className="text-white font-bold text-lg tracking-wide">
+                       {username ? username.split("@")[0] : "Guest User"}
+                    </h3>
+                    <p className="text-[#BF953F] text-xs tracking-widest font-light">{username || "guest@vinylr.com"}</p>
                   </div>
                   
                   {/* Menu Options */}
                   <div className="p-2 space-y-1 bg-[#0B0B0F]/80">
-                    <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#BF953F]/10 text-[#A09CA3] hover:text-[#FCF6BA] transition-colors group">
-                      <Package className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                      <span className="text-sm font-bold uppercase tracking-widest">My Orders & Tracking</span>
-                    </button>
-                    
+                    <button
+    onClick={() => {
+        setIsProfileOpen(false);
+        navigate("/orders");
+    }}
+    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#BF953F]/10 text-[#A09CA3] hover:text-[#FCF6BA] transition-colors group"
+>
+    <Package className="w-4 h-4 group-hover:scale-110 transition-transform" />
+    <span className="text-sm font-bold uppercase tracking-widest">
+        My Orders & Tracking
+    </span>
+</button>
+                     
                     <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#E11D2E]/10 text-[#A09CA3] hover:text-[#E11D2E] transition-colors group">
                       <Heart className="w-4 h-4 group-hover:scale-110 transition-transform" />
                       <span className="text-sm font-bold uppercase tracking-widest">Favourited Items</span>

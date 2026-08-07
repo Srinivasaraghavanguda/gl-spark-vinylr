@@ -9,6 +9,13 @@ import Cart from './pages/Cart';
 import Trending from './pages/Trending';
 import Concerts from './pages/Concerts';
 import Merch from './pages/Merch';
+import Orders from './pages/Orders';
+import AdminDashboard from "./admin/AdminDashboard";
+import AdminAlbums from "./admin/AdminAlbums";
+import AdminMerch from "./admin/AdminMerch";
+import AdminOrders from "./admin/AdminOrders";
+import AlbumDetails from "./pages/AlbumDetails";
+
 // ... rest of imports
 
 // The Layout handles hiding the Navbar on Entry Pages
@@ -38,10 +45,21 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} /> {/* Add this Route */}
           <Route path="/albums" element={<Albums />} />
+          <Route path="/albums/:id" element={<AlbumDetails />}
+/>
           <Route path="/cart" element={<Cart />} />
           <Route path="/trending" element={<Trending />} />
           <Route path="/concerts" element={<Concerts />} />
           <Route path="/merch" element={<Merch />} />
+          <Route path="/orders" element={<Orders />} />
+
+
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/albums" element={<AdminAlbums />} />
+          <Route path="/admin/merch" element={<AdminMerch />} />
+          <Route path="/admin/orders" element={<AdminOrders />} /> 
+
+
           {/* ... other routes ... */}
         </Routes>
       </Layout>

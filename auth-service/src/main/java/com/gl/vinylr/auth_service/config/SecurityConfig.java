@@ -20,23 +20,20 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+                .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
-
                 .headers(headers ->
-                        headers.frameOptions(frame -> frame.disable()))
-
+                        headers.frameOptions(frame -> frame.disable())
+                )
                 .authorizeHttpRequests(auth -> auth
-
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/h2-console/**"
                         ).permitAll()
-
-                        .anyRequest().authenticated())
-
+                        .anyRequest().authenticated()
+                )
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
-
 }

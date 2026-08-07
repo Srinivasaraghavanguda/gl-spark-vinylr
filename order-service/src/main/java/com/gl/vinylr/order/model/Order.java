@@ -12,18 +12,25 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String username;
 
+    @Column(nullable = false)
     private Long albumId;
 
+    @Column(nullable = false)
     private String productType;
 
+    @Column(nullable = false)
     private String orderReference;
 
+    @Column(nullable = false)
     private Integer quantity;
 
+    @Column(nullable = false)
     private Double totalPrice;
 
+    @Column(nullable = false)
     private String status;
 
     private LocalDateTime orderDate;
@@ -99,5 +106,4 @@ public class Order {
     public void setOrderDate(LocalDateTime orderDate) {
         this.orderDate = orderDate;
     }
-
 }

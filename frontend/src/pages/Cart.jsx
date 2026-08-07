@@ -91,18 +91,21 @@ const Cart = () => {
       
       // 3. CLEAN UP & SHOW SUCCESS
       setReceipt({ orderId, date: new Date().toLocaleDateString(), total: total });
-      localStorage.removeItem('vinylr_cart');
-      window.dispatchEvent(new Event('cartUpdated'));
-      
-      setCheckoutStep('SUCCESS');
+      localStorage.setItem("vinylr_cart", "[]");
+setCartItems([]);
+window.dispatchEvent(new Event("cartUpdated"));
+
+setCheckoutStep("SUCCESS");
     } catch (error) {
       console.warn("Backend order failed. Executing Mock Success for frontend demo.");
       // FALLBACK MOCK FOR UI TESTING (If backend is off)
       setTimeout(() => {
         setReceipt({ orderId: `VNLR-MOCK-${Math.floor(Math.random() * 900000)}`, date: new Date().toLocaleDateString(), total: total });
-        localStorage.removeItem('vinylr_cart');
-        window.dispatchEvent(new Event('cartUpdated'));
-        setCheckoutStep('SUCCESS');
+        localStorage.setItem("vinylr_cart", "[]");
+setCartItems([]);
+window.dispatchEvent(new Event("cartUpdated"));
+
+setCheckoutStep("SUCCESS");
       }, 1500);
     } finally {
       setIsProcessing(false);
@@ -161,7 +164,7 @@ const Cart = () => {
                       {/* BLANK IMAGE PLACEHOLDER */}
                       <div className="w-28 h-28 bg-[#1A1A1A] rounded-xl flex-shrink-0 border border-white/5 relative overflow-hidden">
                         <div className={`absolute top-2 left-2 ${item.badgeColor || 'bg-[#E11D2E]'} text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-lg`}>
-                          {item.type || item.category || 'ITEM'}
+                          {item.genre || item.category || 'ITEM'}
                         </div>
                       </div>
                       
@@ -260,7 +263,7 @@ const Cart = () => {
                     ))}
                   </div>
                   
-                  <input type="password" maxLength="4" autoFocus value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} className="absolute opacity-0 -z-10" />
+                  <input type="password" maxLength={4} autoFocus value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} className="w-full mb-6 bg-[#0B0B0F] border border-white/20 rounded-xl py-4 px-4 text-center text-3xl tracking-[1rem] text-white focus:outline-none focus:border-[#E11D2E]"/>
 
                   <button disabled={isProcessing} type="submit" className="w-full py-4 rounded-xl font-bold text-lg text-white bg-[#E11D2E] hover:bg-[#B146FF] transition-all uppercase tracking-widest flex items-center justify-center gap-2">
                     {isProcessing ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Authorize Payment'}

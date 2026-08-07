@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/catalog")
-@CrossOrigin(origins = "*")
 public class CatalogController {
 
     private final AlbumRepository albumRepository;
@@ -70,6 +69,60 @@ public class CatalogController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(albumRepository.save(album));
     }
+    // ==========================
+// UPDATE ALBUM (ADMIN)
+// ==========================
+@PutMapping("/albums/{id}")
+public ResponseEntity<?> updateAlbum(
+        @PathVariable Long id,
+        @RequestBody Album updatedAlbum) {
+
+    return albumRepository.findById(id)
+            .<ResponseEntity<?>>map(album -> {
+
+                album.setTitle(updatedAlbum.getTitle());
+                album.setArtist(updatedAlbum.getArtist());
+                album.setGenre(updatedAlbum.getGenre());
+                album.setDescription(updatedAlbum.getDescription());
+                album.setImageUrl(updatedAlbum.getImageUrl());
+                album.setReleaseYear(updatedAlbum.getReleaseYear());
+                album.setPrice(updatedAlbum.getPrice());
+                album.setStock(updatedAlbum.getStock());
+
+                albumRepository.save(album);
+
+                return ResponseEntity.ok(album);
+
+            }).orElseGet(() ->
+                    ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(Map.of(
+                                    "message",
+                                    "Album not found"
+                            )));
+}
+// ==========================
+// DELETE ALBUM (ADMIN)
+// ==========================
+@DeleteMapping("/albums/{id}")
+public ResponseEntity<?> deleteAlbum(@PathVariable Long id) {
+
+    if (!albumRepository.existsById(id)) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of(
+                        "message",
+                        "Album not found"
+                ));
+    }
+
+    albumRepository.deleteById(id);
+
+    return ResponseEntity.ok(
+            Map.of(
+                    "message",
+                    "Album deleted successfully"
+            ));
+}
 
     // ==========================
     // RESERVE STOCK

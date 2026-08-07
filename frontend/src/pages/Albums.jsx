@@ -19,7 +19,14 @@ const SIDEBAR_CATEGORIES = ["All Albums", "Pre-Orders", "New Releases", "Best Se
 const GENRES = ["Rock", "Pop", "Hip Hop", "K-Pop", "Electronic", "Cinematic"];
 
 const Albums = () => {
-  const navigate = useNavigate();
+
+    const navigate = useNavigate();
+
+    const openAlbum = (item) => {
+        navigate(`/albums/${item.id}`);
+    };
+
+    // Data & Loading States
 
   // Data & Loading States
   const [storeItems, setStoreItems] = useState([]);
@@ -31,21 +38,29 @@ const Albums = () => {
   const [selectedGenres, setSelectedGenres] = useState([]);
 
   // FETCH DATA FROM BACKEND ON MOUNT
-  useEffect(() => {
-    const fetchCatalog = async () => {
-      try {
-        const data = await catalogService.getAllAlbums();
-        setStoreItems(data);
-      } catch (error) {
-        console.warn("Backend unreachable. Loading fallback mock data.");
-        setStoreItems(FALLBACK_ITEMS);
-      } finally {
-        setTimeout(() => setIsLoading(false), 800);
-      }
-    };
-    fetchCatalog();
-  }, []);
+useEffect(() => {
+  const fetchCatalog = async () => {
+    try {
+      const data = await catalogService.getAllAlbums();
 
+      const mappedAlbums = data.map((album) => ({
+        ...album,
+        type: "Vinyl",
+        collection: "New Releases",
+        badgeColor: "bg-[#E11D2E]"
+      }));
+
+      setStoreItems(mappedAlbums);
+    } catch (error) {
+      console.warn("Backend unreachable. Loading fallback mock data.");
+      setStoreItems(FALLBACK_ITEMS);
+    } finally {
+      setTimeout(() => setIsLoading(false), 800);
+    }
+  };
+
+  fetchCatalog();
+}, []);
   // --- CART & NAVIGATION LOGIC ---
   const handleBuyNow = (item) => {
     if (item.stock === 0) return;
@@ -199,7 +214,7 @@ const Albums = () => {
                   const isSoldOut = item.stock === 0;
 
                   return (
-                    <motion.div layout key={item.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3 }} className={`bg-[#120E14]/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col group transition-all ${isSoldOut ? 'opacity-60' : 'hover:border-[#E11D2E]/50 hover:shadow-[0_0_30px_rgba(225,29,46,0.15)]'}`}>
+                    <motion.div layout key={item.id} onClick={() => openAlbum(item)} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3 }} className={`cursor-pointer bg-[#120E14]/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col group transition-all ${isSoldOut ? 'opacity-60' : 'hover:border-[#E11D2E]/50 hover:shadow-[0_0_30px_rgba(225,29,46,0.15)]'}`}>
                       
                       {/* BLANK IMAGE PLACEHOLDER */}
                       <div className="w-full aspect-[4/5] bg-[#1A1A1A] rounded-xl relative mb-4 overflow-hidden border border-white/5">
@@ -236,14 +251,14 @@ const Albums = () => {
                         {/* Action Buttons */}
                         <div className="grid grid-cols-2 gap-3 mt-auto">
                           <button 
-                            onClick={() => handleBuyNow(item)}
+                            onClick={(e) => { e.stopPropagation(); handleBuyNow(item);}}
                             disabled={isSoldOut}
                             className={`w-full py-2.5 rounded-lg text-white text-sm font-bold uppercase tracking-widest transition-all ${isSoldOut ? 'bg-white/5 text-white/30 cursor-not-allowed' : 'bg-gradient-to-r from-[#8B0E1A] to-[#E11D2E] hover:shadow-[0_0_15px_rgba(225,29,46,0.4)]'}`}
                           >
                             Buy Now
                           </button>
                           <button 
-                            onClick={() => handleAddToCart(item)}
+                            onClick={(e) => {e.stopPropagation(); handleAddToCart(item);}}
                             disabled={isSoldOut}
                             className={`w-full py-2.5 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${isSoldOut ? 'bg-transparent border border-white/5 text-white/30 cursor-not-allowed' : 'bg-[#0B0B0F] border border-white/20 text-[#A09CA3] hover:text-white hover:border-white/60'}`}
                           >

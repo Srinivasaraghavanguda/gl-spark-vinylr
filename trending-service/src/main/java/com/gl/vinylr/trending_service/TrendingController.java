@@ -10,94 +10,125 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/trending")
-@CrossOrigin(origins = "*")
 public class TrendingController {
 
     // ==========================
     // GLOBAL iTUNES CHARTS
     // ==========================
-    @GetMapping("/itunes-global")
-    public ResponseEntity<List<Map<String, Object>>> getItunesCharts() {
+   @GetMapping("/itunes-global")
+public ResponseEntity<List<Map<String, Object>>> getItunesCharts() {
 
-        try {
+    try {
 
-            RestTemplate restTemplate = new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
 
-            String url = "https://itunes.apple.com/us/rss/topsongs/limit=20/json";
+        String url = "https://itunes.apple.com/us/rss/topsongs/limit=20/json";
 
-            String json = restTemplate.getForObject(url, String.class);
+        String json = restTemplate.getForObject(url, String.class);
 
-            ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
 
-            JsonNode root = mapper.readTree(json);
+        JsonNode root = mapper.readTree(json);
 
-            JsonNode entries = root.path("feed").path("entry");
+        JsonNode entries = root.path("feed").path("entry");
 
-            List<Map<String, Object>> tracks = new ArrayList<>();
+        List<Map<String, Object>> tracks = new ArrayList<>();
 
-            int rank = 1;
+        int rank = 1;
 
-            if (entries.isArray()) {
+        if (entries.isArray()) {
 
-                for (JsonNode e : entries) {
+            for (JsonNode e : entries) {
 
-                    Map<String, Object> track = new HashMap<>();
+                Map<String, Object> track = new HashMap<>();
 
-                    track.put("id", rank);
-                    track.put("rank", rank);
-                    track.put("title", e.path("im:name").path("label").asText(""));
-                    track.put("artist", e.path("im:artist").path("label").asText(""));
-                    track.put("cover", "");
-                    track.put("streams", "");
-                    track.put("duration", "03:30");
+                // ==========================
+                // GET HIGHEST QUALITY COVER
+                // ==========================
+                String cover = "";
 
-                    tracks.add(track);
+                JsonNode images = e.path("im:image");
 
-                    rank++;
+                if (images.isArray() && images.size() > 0) {
+                    cover = images
+                            .get(images.size() - 1)
+                            .path("label")
+                            .asText("");
                 }
+
+                // ==========================
+                // BUILD RESPONSE
+                // ==========================
+                track.put("id", rank);
+                track.put("rank", rank);
+
+                track.put(
+                        "title",
+                        e.path("im:name")
+                                .path("label")
+                                .asText("")
+                );
+
+                track.put(
+                        "artist",
+                        e.path("im:artist")
+                                .path("label")
+                                .asText("")
+                );
+
+                track.put("cover", cover);
+
+                // RSS feed doesn't provide these
+                track.put("streams", "--");
+                track.put("duration", "--:--");
+
+                tracks.add(track);
+
+                rank++;
             }
-
-            return ResponseEntity.ok(tracks);
-
-        } catch (Exception ex) {
-
-            return ResponseEntity.ok(Arrays.asList(
-
-                    Map.of(
-                            "id",1,
-                            "rank",1,
-                            "title","Midnight Drive LP",
-                            "artist","The Synthetics",
-                            "cover","",
-                            "streams","95.5M",
-                            "duration","03:18"
-                    ),
-
-                    Map.of(
-                            "id",2,
-                            "rank",2,
-                            "title","Analog Echoes",
-                            "artist","VinylR Originals",
-                            "cover","",
-                            "streams","89.2M",
-                            "duration","03:05"
-                    ),
-
-                    Map.of(
-                            "id",3,
-                            "rank",3,
-                            "title","Neon Pulse Boxset",
-                            "artist","Cosmic Wave",
-                            "cover","",
-                            "streams","81.4M",
-                            "duration","03:42"
-                    )
-
-            ));
-
         }
 
+        return ResponseEntity.ok(tracks);
+
+    } catch (Exception ex) {
+
+        ex.printStackTrace();
+
+        return ResponseEntity.ok(Arrays.asList(
+
+                Map.of(
+                        "id", 1,
+                        "rank", 1,
+                        "title", "Midnight Drive LP",
+                        "artist", "The Synthetics",
+                        "cover", "",
+                        "streams", "95.5M",
+                        "duration", "03:18"
+                ),
+
+                Map.of(
+                        "id", 2,
+                        "rank", 2,
+                        "title", "Analog Echoes",
+                        "artist", "VinylR Originals",
+                        "cover", "",
+                        "streams", "89.2M",
+                        "duration", "03:05"
+                ),
+
+                Map.of(
+                        "id", 3,
+                        "rank", 3,
+                        "title", "Neon Pulse Boxset",
+                        "artist", "Cosmic Wave",
+                        "cover", "",
+                        "streams", "81.4M",
+                        "duration", "03:42"
+                )
+
+        ));
     }
+}
 
     // ==========================
     // VINYLR BEST SELLERS

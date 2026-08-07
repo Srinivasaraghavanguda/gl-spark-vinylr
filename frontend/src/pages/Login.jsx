@@ -29,21 +29,31 @@ const Login = () => {
       // Calls your Spring Boot Auth Controller: @PostMapping("/auth/login")
       const response = await api.post('/auth/login', { email, password });
       
-      // 1. Store the JWT securely
-      localStorage.setItem('vinylr_jwt', response.data.token);
-      
-      // 2. Handle "Remember Me" logic without storing passwords locally
-      if (rememberMe) {
-        localStorage.setItem('vinylr_saved_email', email);
-      } else {
-        localStorage.removeItem('vinylr_saved_email');
-      }
+      // Store authenticated user information
+localStorage.setItem("vinylr_jwt", response.data.token);
+localStorage.setItem("vinylr_user", response.data.username);
+localStorage.setItem("vinylr_role", response.data.role);
 
-      toast.success('Welcome back to VinylR!', { id: loadingToast, style: { background: '#E11D2E', color: '#fff' } });
-      
-      // 3. Navigate to home page directly upon validation
-      setTimeout(() => navigate('/'), 1000);
+// Remember email only (never password)
+if (rememberMe) {
+  localStorage.setItem("vinylr_saved_email", email);
+} else {
+  localStorage.removeItem("vinylr_saved_email");
+}
 
+// Notify Navbar immediately
+window.dispatchEvent(new Event("storage"));
+
+toast.success("Welcome back to VinylR!", {
+  id: loadingToast,
+  style: {
+    background: "#E11D2E",
+    color: "#fff"
+  }
+});
+
+// Redirect to Home
+setTimeout(() => navigate("/"), 800);
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Invalid credentials. Please try again or sign up.';
       toast.error(errorMsg, { id: loadingToast, style: { background: '#120E14', color: '#fff', border: '1px solid #E11D2E' } });
