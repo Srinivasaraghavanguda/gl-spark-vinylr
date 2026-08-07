@@ -1,17 +1,51 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Login from './pages/Login';
+import Signup from './pages/Signup'; // Import Signup
+import Home from './pages/Home';
+import Albums from './pages/Albums';
+import Cart from './pages/Cart';
+import Trending from './pages/Trending';
+import Concerts from './pages/Concerts';
+import Merch from './pages/Merch';
+// ... rest of imports
+
+// The Layout handles hiding the Navbar on Entry Pages
+const Layout = ({ children }) => {
+  const location = useLocation();
+  const path = location.pathname;
+  
+  // Hide the Navbar on Login and Signup pages
+  const isEntryPage = path === '/login' || path === '/signup';
+
+  return (
+    <div className="bg-[#0B0B0F] min-h-screen font-sans">
+      {!isEntryPage && <Navbar />}
+      <main>
+        {children}
+      </main>
+    </div>
+  );
+};
 
 function App() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6">
-      <div className="p-8 rounded-2xl bg-slate-900 border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 text-center max-w-md">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-500 bg-clip-text text-transparent mb-3">
-          Tailwind is Active!
-        </h1>
-        <p className="text-slate-400 text-sm">
-          Your high-fidelity workspace is ready for the VinylR blueprint.
-        </p>
-      </div>
-    </div>
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} /> {/* Add this Route */}
+          <Route path="/albums" element={<Albums />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/trending" element={<Trending />} />
+          <Route path="/concerts" element={<Concerts />} />
+          <Route path="/merch" element={<Merch />} />
+          {/* ... other routes ... */}
+        </Routes>
+      </Layout>
+    </Router>
   );
 }
 

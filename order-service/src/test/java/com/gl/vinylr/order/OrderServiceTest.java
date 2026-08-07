@@ -17,13 +17,25 @@ public class OrderServiceTest {
     private MockMvc mockMvc;
 
     @Test
-    public void contextLoads() {
+    void contextLoads() {
     }
 
-    // Test 2: Verifies order endpoint exists but correctly blocks GET requests
+    // Verify GET /api/orders returns 200 OK
     @Test
-    public void testGetOrdersEndpointIsProtected() throws Exception {
+    void testGetAllOrders() throws Exception {
+
         mockMvc.perform(get("/api/orders"))
-               .andExpect(status().isMethodNotAllowed()); // Expects the 405 block!
+                .andExpect(status().isOk());
+
     }
+
+    // Verify GET /api/orders/status/{status}
+    @Test
+    void testGetOrdersByStatus() throws Exception {
+
+        mockMvc.perform(get("/api/orders/status/CONFIRMED"))
+                .andExpect(status().isOk());
+
+    }
+
 }

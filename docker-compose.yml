@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  service-registry:
+    build: ./service-registry
+    ports:
+      - "8761:8761"
+    environment:
+      - JAVA_OPTS=-Xms256m -Xmx512m
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8086:8086"
+    depends_on:
+      - service-registry
+    environment:
+      - SPRING_EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+
+  trending-service:
+    build: ./trending-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - service-registry
+    environment:
+      - SPRING_EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+
+  postgres:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: vinylr
+      POSTGRES_PASSWORD: vinylrpass
+      POSTGRES_DB: vinylr
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+
+volumes:
+  db-data:

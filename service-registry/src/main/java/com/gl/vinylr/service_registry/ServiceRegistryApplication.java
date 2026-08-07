@@ -1,4 +1,4 @@
-package com.gl.vinylr.registry;
+package com.gl.vinylr.service_registry;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -8,8 +8,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.Matchers.containsString;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -20,17 +19,15 @@ public class TrendingServiceTest {
 
     @Test
     public void testGetTrendingChart() throws Exception {
-        mockMvc.perform(get("/api/trending/songs"))
-               .andExpect(status().isOk());
+        mockMvc.perform(get("/api/trending/itunes-global"))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$[0].title").exists());
     }
 
     @Test
-    public void testFallbackWhenSourceUnavailable() throws Exception {
-        mockMvc.perform(get("/api/trending/songs"))
+    public void testGenreDistribution() throws Exception {
+        mockMvc.perform(get("/api/trending/genres"))
                .andExpect(status().isOk())
-               .andExpect(content().string(org.hamcrest.Matchers.anyOf(
-                       containsString("results"), 
-                       containsString("FALLBACK")     
-               )));
+               .andExpect(jsonPath("$[0].name").exists());
     }
 }

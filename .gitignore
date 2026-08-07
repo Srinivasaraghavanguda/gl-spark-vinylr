@@ -1,22 +1,33 @@
-# Compiled class files
-*.class
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
 
-# Log files
+# IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Logs
 *.log
 
-# Package files
-*.jar
-*.war
+# H2 database
+*.mv.db
+*.trace.db
 
-# IDE files
-.idea/
-.vscode/
+# Node
+frontend/node_modules/
+
+# Build folders
+frontend/build/
+
+# ZIP files
+*.zip
+
+# Temporary folders
+temp_requests/
+
+# OS files
 .DS_Store
-
-# Build directories
-target/
-build/
-node_modules/
-
-# Environment variables
-.env
+Thumbs.db
