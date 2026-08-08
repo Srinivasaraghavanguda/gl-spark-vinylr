@@ -2,6 +2,7 @@ package com.gl.vinylr.catalog.controller;
 
 import com.gl.vinylr.catalog.model.Album;
 import com.gl.vinylr.catalog.repository.AlbumRepository;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +18,8 @@ public class CatalogController {
     private final AlbumRepository albumRepository;
 
     public CatalogController(AlbumRepository albumRepository) {
-        this.albumRepository = albumRepository;
-    }
+    this.albumRepository = albumRepository;
+}
 
     // ==========================
     // GET ALL ALBUMS
@@ -27,6 +28,8 @@ public class CatalogController {
     public ResponseEntity<List<Album>> getAllAlbums() {
         return ResponseEntity.ok(albumRepository.findAll());
     }
+
+
 
     // ==========================
     // GET ALBUM BY ID

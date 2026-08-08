@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/catalog/merch")
-@CrossOrigin(origins = "*")
 public class MerchController {
 
     private final MerchRepository merchRepository;
@@ -54,6 +53,73 @@ public class MerchController {
         );
     }
 
+    // ==========================
+// ADD MERCH (ADMIN)
+// ==========================
+@PostMapping
+public ResponseEntity<Merch> addMerch(
+        @RequestBody Merch merch) {
+
+    Merch savedMerch = merchRepository.save(merch);
+
+    return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(savedMerch);
+}
+// ==========================
+// UPDATE MERCH (ADMIN)
+// ==========================
+@PutMapping("/{id}")
+public ResponseEntity<?> updateMerch(
+        @PathVariable Long id,
+        @RequestBody Merch updatedMerch) {
+
+    return merchRepository.findById(id)
+            .<ResponseEntity<?>>map(merch -> {
+
+                merch.setName(updatedMerch.getName());
+                merch.setCategory(updatedMerch.getCategory());
+                merch.setDescription(updatedMerch.getDescription());
+                merch.setImageUrl(updatedMerch.getImageUrl());
+                merch.setPrice(updatedMerch.getPrice());
+                merch.setStock(updatedMerch.getStock());
+                merch.setVariant(updatedMerch.getVariant());
+
+                Merch savedMerch = merchRepository.save(merch);
+
+                return ResponseEntity.ok(savedMerch);
+
+            })
+            .orElseGet(() ->
+                    ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(Map.of(
+                                    "message",
+                                    "Merch not found"
+                            )));
+}
+ // ==========================
+// DELETE MERCH (ADMIN)
+// ==========================
+@DeleteMapping("/{id}")
+public ResponseEntity<?> deleteMerch(@PathVariable Long id) {
+
+    if (!merchRepository.existsById(id)) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of(
+                        "message",
+                        "Merch not found"
+                ));
+    }
+
+    merchRepository.deleteById(id);
+
+    return ResponseEntity.ok(
+            Map.of(
+                    "message",
+                    "Merch deleted successfully"
+            ));
+}
     // ==========================
     // SEARCH BY NAME
     // ==========================

@@ -15,6 +15,7 @@ import AdminAlbums from "./admin/AdminAlbums";
 import AdminMerch from "./admin/AdminMerch";
 import AdminOrders from "./admin/AdminOrders";
 import AlbumDetails from "./pages/AlbumDetails";
+import MerchDetails from "./pages/MerchDetails";
 
 // ... rest of imports
 
@@ -52,6 +53,7 @@ function App() {
           <Route path="/concerts" element={<Concerts />} />
           <Route path="/merch" element={<Merch />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/merch/:id" element={<MerchDetails />} />
 
 
           <Route path="/admin" element={<AdminDashboard />} />
