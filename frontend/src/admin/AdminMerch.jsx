@@ -192,7 +192,7 @@ export default function AdminMerch() {
 
     return (
 
-        <div className="min-h-screen bg-[#080808] text-white p-8">
+        <div className="min-h-screen bg-[#080808] text-white pt-28 lg:pt-32 px-4 sm:px-6 lg:px-10 pb-10">
 
             {/* ==========================
                 HEADER

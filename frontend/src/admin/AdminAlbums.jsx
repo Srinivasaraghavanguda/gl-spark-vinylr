@@ -27,15 +27,27 @@ const [isEditMode, setIsEditMode] = useState(false);
     }, []);
 
     const loadAlbums = async () => {
-        try {
-            const data = await catalogService.getAllAlbums();
-            setAlbums(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+        const data = await catalogService.getAllAlbums();
+
+        const sortedAlbums = [...data].sort((a, b) => {
+            const stockA = Number(a.stock || 0);
+            const stockB = Number(b.stock || 0);
+
+            if (stockA > 0 && stockB <= 0) return -1;
+            if (stockA <= 0 && stockB > 0) return 1;
+
+            return 0;
+        });
+
+        setAlbums(sortedAlbums);
+
+    } catch (err) {
+        console.error(err);
+    } finally {
+        setLoading(false);
+    }
+};
 
 const saveAlbum = async () => {
 
@@ -128,7 +140,7 @@ const deleteAlbum = async (id) => {
     }
 
     return (
-        <div className="min-h-screen bg-[#080808] text-white p-10">
+        <div className="min-h-screen bg-[#080808] text-white pt-28 lg:pt-32 px-4 sm:px-6 lg:px-10 pb-10">
 
             <div className="flex justify-between items-center mb-10">
 

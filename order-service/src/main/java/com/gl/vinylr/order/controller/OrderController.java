@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = "*")
 public class OrderController {
 
     private final OrderRepository orderRepository;
@@ -63,6 +63,42 @@ public class OrderController {
                 orderRepository.findByUsername(username)
         );
     }
+
+    // ==========================================
+// UPDATE ORDER STATUS (ADMIN)
+// ==========================================
+
+@PutMapping("/{id}/status")
+public ResponseEntity<?> updateOrderStatus(
+        @PathVariable Long id,
+        @RequestBody Map<String, String> request) {
+
+    String status = request.get("status");
+
+    if (status == null || status.isBlank()) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("message", "Status is required"));
+    }
+
+    Order order = orderRepository.findById(id)
+            .orElse(null);
+
+    if (order == null) {
+        return ResponseEntity.notFound().build();
+    }
+
+    String newStatus = status.trim().toUpperCase();
+
+    order.setStatus(newStatus);
+
+    if ("DELIVERED".equals(newStatus)) {
+        order.setDeliveredOn(LocalDateTime.now());
+    }
+
+    Order updatedOrder = orderRepository.save(order);
+
+    return ResponseEntity.ok(updatedOrder);
+}
 
     // ==========================================
     // GET ORDERS BY STATUS
@@ -116,9 +152,17 @@ public class OrderController {
 
                 Map<?, ?> catalogItem = reserve(item);
 
-                reservedItems.add(item);
+reservedItems.add(item);
 
-                Number price = (Number) catalogItem.get("price");
+Number price = (Number) catalogItem.get("price");
+
+String productName;
+
+if ("ALBUM".equalsIgnoreCase(item.productType())) {
+    productName = String.valueOf(catalogItem.get("title"));
+} else {
+    productName = String.valueOf(catalogItem.get("name"));
+}
 
                 Order order = new Order();
 
@@ -130,10 +174,12 @@ public class OrderController {
 
                 order.setAlbumId(item.productId());
 
-                order.setProductType(
-                        item.productType()
-                                .trim()
-                                .toUpperCase());
+order.setProductName(productName);
+
+order.setProductType(
+        item.productType()
+                .trim()
+                .toUpperCase());
 
                 order.setOrderReference(orderReference);
 
@@ -144,7 +190,11 @@ public class OrderController {
 
                 order.setStatus("CONFIRMED");
 
-                orders.add(order);
+order.setEstimatedDelivery(
+        LocalDateTime.now().plusDays(4)
+);
+
+orders.add(order);
             }
 
             List<Order> savedOrders =

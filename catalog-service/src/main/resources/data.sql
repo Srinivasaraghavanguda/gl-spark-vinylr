@@ -101,91 +101,21 @@ VALUES
 --------------------------------------------------------
 -- MERCH
 --------------------------------------------------------
+-- MERCH
 
-INSERT INTO merch
-(name, category, description, image_url, price, stock, variant)
-VALUES
-('VinylR Classic Hoodie',
-'hoodies',
-'Premium heavyweight hoodie.',
-'',
-2499,
-30,
-'Black XL');
 
-INSERT INTO merch
-(name, category, description, image_url, price, stock, variant)
-VALUES
-('Official Tour T-Shirt',
-'tshirts',
-'Soft cotton concert t-shirt.',
-'',
-999,
-60,
-'Large');
 
-INSERT INTO merch
-(name, category, description, image_url, price, stock, variant)
+MERGE INTO merch
+(id, name, category, description, image_url, price, stock, variant)
+KEY(id)
 VALUES
-('Official Lightstick',
-'lightsticks',
-'Rechargeable RGB concert lightstick.',
-'',
-3499,
-45,
-'Standard');
-
-INSERT INTO merch
-(name, category, description, image_url, price, stock, variant)
-VALUES
-('VinylR Cargo Pants',
-'pants',
-'Comfort fit concert cargo pants.',
-'',
-1999,
-25,
-'Medium');
-
-INSERT INTO merch
-(name, category, description, image_url, price, stock, variant)
-VALUES
-('VinylR Cap',
-'caps',
-'Adjustable embroidered premium cap.',
-'',
-799,
-35,
-'Black');
-
-INSERT INTO merch
-(name, category, description, image_url, price, stock, variant)
-VALUES
-('Collector Plush Toy',
-'toys',
-'Limited edition VinylR mascot plush.',
-'',
-1599,
-20,
-'Standard');
-
-INSERT INTO merch
-(name, category, description, image_url, price, stock, variant)
-VALUES
-('VinylR Tote Bag',
-'bags',
-'Premium canvas tote bag.',
-'',
-699,
-40,
-'White');
-
-INSERT INTO merch
-(name, category, description, image_url, price, stock, variant)
-VALUES
-('Sticker Pack',
-'accessories',
-'Exclusive VinylR sticker collection.',
-'',
-299,
-100,
-'Standard');
+(
+    1,
+    'BLACKPINK Official Lightstick',
+    'Lightsticks',
+    'BLACKPINK concert lightstick collectible for BLINKs.',
+    'https://commons.wikimedia.org/wiki/Special:Redirect/file/Blackpink%20x%20Takashi%20Murakami%20lightstick%20display.jpg',
+    3499,
+    25,
+    'Standard'
+);

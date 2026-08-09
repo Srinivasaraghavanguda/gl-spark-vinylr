@@ -1,327 +1,1736 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Truck, ShieldCheck, Star, RefreshCcw, Lock, Flame } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Truck,
+  ShieldCheck,
+  Star,
+  RefreshCcw,
+  Lock,
+  Flame,
+  ArrowRight,
+  Disc3,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
+import FloatingVinyl from "../components/Aesthetics/FloatingVinyl";
 import { catalogService } from "../api/catalogService";
-import FloatingVinyl from '../components/Aesthetics/FloatingVinyl';
+import { getAlbumCover } from "../data/albumCoverService";
 
-// --- IMAGE-READY MOCK DATA ---
-// To add your own images, just paste the URL/path into the 'image' field!
-
+/* =========================================================
+   FEATURE STRIP
+   ========================================================= */
 
 const FEATURES = [
-  { icon: Truck, title: "Free Shipping", desc: "On orders above ₹999" },
-  { icon: ShieldCheck, title: "Exclusive Drops", desc: "Limited edition merch" },
-  { icon: Star, title: "Premium Quality", desc: "100% authentic products" },
-  { icon: RefreshCcw, title: "Easy Returns", desc: "Hassle free returns" },
-  { icon: Lock, title: "Secure Payments", desc: "Safe & encrypted" }
+  {
+    icon: Truck,
+    title: "Free Shipping",
+    desc: "On orders above ₹999",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Exclusive Drops",
+    desc: "Limited edition merch",
+  },
+  {
+    icon: Star,
+    title: "Premium Quality",
+    desc: "100% authentic products",
+  },
+  {
+    icon: RefreshCcw,
+    title: "Easy Returns",
+    desc: "Hassle free returns",
+  },
+  {
+    icon: Lock,
+    title: "Secure Payments",
+    desc: "Safe & encrypted",
+  },
 ];
 
-
-const TOP_ARTISTS = [
-  { id: 1, name: "The Weeknd", tag: "Pop / R&B", image: "" },
-  { id: 2, name: "RaGaForge", tag: "Cinematic / Score", image: "" },
-  { id: 3, name: "Cosmic Wave", tag: "Electronic", image: "" },
-  { id: 4, name: "The Synthetics", tag: "Synthwave", image: "" },
-  { id: 5, name: "DJ Horizon", tag: "House", image: "" },
-  { id: 6, name: "Miles & Co.", tag: "Jazz", image: "" },
-  { id: 7, name: "Symphony X", tag: "Classical", image: "" }
-];
+/* =========================================================
+   HOME
+   ========================================================= */
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-const [sliderItems, setSliderItems] = useState([]);
-const [topSales, setTopSales] = useState([]);
 
-  // Auto-rotate slider every 3.5 seconds
+  const [sliderItems, setSliderItems] = useState([]);
+  const [topSales, setTopSales] = useState([]);
+  const [topArtists, setTopArtists] = useState([]);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  /* =======================================================
+     LOAD ALBUMS
+     ======================================================= */
+
   useEffect(() => {
+    let mounted = true;
 
     const loadAlbums = async () => {
-
-    try {
+      try {
+        setIsLoading(true);
 
         const albums = await catalogService.getAllAlbums();
 
-if (albums && albums.length > 0) {
+        if (!albums || albums.length === 0) {
+          if (mounted) {
+            setSliderItems([]);
+            setTopSales([]);
+            setTopArtists([]);
+          }
 
-    setSliderItems(albums.slice(0, 5));
+          return;
+        }
 
-    setTopSales(albums);
+        /* =================================================
+           GET iTUNES ARTWORK
 
-}
+           IMPORTANT:
+           We intentionally DO NOT use album.imageUrl,
+           album.image, album.cover, etc.
 
-    } catch (err) {
+           Home should use the iTunes artwork we mapped
+           earlier.
+           ================================================= */
 
-        console.error(err);
+        const albumsWithCovers = await Promise.all(
+          albums.map(async (album) => {
+            try {
+              const title =
+                album.title ||
+                album.name ||
+                album.albumName ||
+                "";
 
-    }
+              const artist =
+                album.artist ||
+                album.artistName ||
+                "";
 
-};
+              if (!title || !artist) {
+                return null;
+              }
+
+              const itunesCover = await getAlbumCover(
+                artist,
+                title
+              );
+
+              if (!itunesCover) {
+                return null;
+              }
+
+              /* Make sure the returned value is a real URL */
+
+              try {
+                const parsedUrl = new URL(itunesCover);
+
+                if (
+                  parsedUrl.protocol !== "http:" &&
+                  parsedUrl.protocol !== "https:"
+                ) {
+                  return null;
+                }
+              } catch {
+                return null;
+              }
+
+              return {
+                ...album,
+
+                /* Normalize these fields so the UI
+                   doesn't depend on backend naming. */
+                title,
+                artist,
+
+                /* ONLY iTunes artwork */
+                imageUrl: itunesCover,
+              };
+            } catch (error) {
+              console.error(
+                `Unable to load iTunes cover for ${album?.title}`,
+                error
+              );
+
+              return null;
+            }
+          })
+        );
+
+        /* =================================================
+           ONLY ALBUMS WITH VALID iTUNES COVERS
+           ================================================= */
+
+        const validAlbums = albumsWithCovers.filter(
+          (album) =>
+            album &&
+            typeof album.imageUrl === "string" &&
+            album.imageUrl.trim().length > 0
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        /* =================================================
+           HERO
+
+           Only albums with actual iTunes artwork.
+           No-cover albums never enter sliderItems.
+           ================================================= */
+
+        const heroAlbums = validAlbums.slice(0, 7);
+
+        setSliderItems(heroAlbums);
+
+        /* =================================================
+           TOP SALES
+
+           We don't fabricate sales numbers.
+           Until the backend provides an actual sales/
+           popularity field, use the catalog order.
+           ================================================= */
+
+        setTopSales(validAlbums.slice(0, 10));
+
+        /* =================================================
+           TOP ARTISTS
+
+           Extract actual artists from the albums.
+
+           Ranking:
+           More albums represented in the catalog =
+           higher position.
+
+           We are NOT inventing iTunes stream counts.
+           ================================================= */
+
+        const artistMap = new Map();
+
+        validAlbums.forEach((album) => {
+          const artistName =
+            album.artist ||
+            album.artistName ||
+            "";
+
+          if (!artistName) {
+            return;
+          }
+
+          if (!artistMap.has(artistName)) {
+            artistMap.set(artistName, {
+              name: artistName,
+              image: album.imageUrl,
+              genre:
+                album.genre ||
+                album.primaryGenreName ||
+                "Music",
+              albumCount: 1,
+            });
+          } else {
+            const existingArtist =
+              artistMap.get(artistName);
+
+            existingArtist.albumCount += 1;
+
+            if (
+              !existingArtist.image &&
+              album.imageUrl
+            ) {
+              existingArtist.image =
+                album.imageUrl;
+            }
+          }
+        });
+
+        const artists = Array.from(
+          artistMap.values()
+        )
+          .filter(
+            (artist) =>
+              artist.image &&
+              artist.image.trim().length > 0
+          )
+          .sort(
+            (a, b) =>
+              b.albumCount - a.albumCount
+          )
+          .slice(0, 7);
+
+        setTopArtists(artists);
+      } catch (error) {
+        console.error(
+          "Failed to load Home albums:",
+          error
+        );
+
+        if (mounted) {
+          setSliderItems([]);
+          setTopSales([]);
+          setTopArtists([]);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
 
     loadAlbums();
 
-}, []);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-useEffect(() => {
+  /* =======================================================
+     HERO AUTO SLIDER
+     ======================================================= */
 
-    if (sliderItems.length === 0) return;
+  useEffect(() => {
+    if (sliderItems.length <= 1) {
+      return;
+    }
 
     const timer = setInterval(() => {
-
-        setCurrentSlide((prev) => (prev + 1) % sliderItems.length);
-
-    }, 3500);
+      setCurrentSlide(
+        (previous) =>
+          (previous + 1) % sliderItems.length
+      );
+    }, 5000);
 
     return () => clearInterval(timer);
+  }, [sliderItems]);
 
-}, [sliderItems]);
+  /* =======================================================
+     SAFETY WHEN DATA CHANGES
+     ======================================================= */
+
+  useEffect(() => {
+    if (
+      sliderItems.length > 0 &&
+      currentSlide >= sliderItems.length
+    ) {
+      setCurrentSlide(0);
+    }
+  }, [sliderItems, currentSlide]);
+
+  const currentAlbum =
+    sliderItems[currentSlide];
+
+  /* =======================================================
+     RENDER
+     ======================================================= */
 
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-white pt-20 font-['Oswald'] overflow-x-hidden relative">
-      
-      {/* =========================================
-          BACKGROUND: THICK SMOKE & FLOATING VINYL
-          ========================================= */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Thicker Red Smoke */}
-        <motion.div 
-          animate={{ scale: [1, 1.1, 1], opacity: [0.35, 0.55, 0.35] }} 
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} 
-          className="absolute top-[10%] right-[5%] w-[900px] h-[900px] bg-[#E11D2E] rounded-full blur-[200px]" 
+    <div
+      className="
+        min-h-screen
+        bg-[#08070A]
+        text-white
+        pt-20
+        font-['Oswald']
+        overflow-x-hidden
+        relative
+      "
+    >
+      {/* ===================================================
+          CINEMATIC FLUID / SMOKE BACKGROUND
+
+          KEEPING THIS!
+
+          Movement is intentionally VERY slow so it feels
+          atmospheric instead of looking like moving blobs.
+          =================================================== */}
+
+      <div
+        className="
+          fixed
+          inset-0
+          pointer-events-none
+          overflow-hidden
+          z-0
+        "
+      >
+        {/* RED SMOKE */}
+
+        <motion.div
+          animate={{
+            x: [0, 35, -20, 0],
+            y: [0, -25, 20, 0],
+            scale: [1, 1.08, 0.96, 1],
+            opacity: [0.18, 0.27, 0.21, 0.18],
+          }}
+          transition={{
+            duration: 24,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="
+            absolute
+            top-[-10%]
+            right-[-10%]
+            w-[850px]
+            h-[850px]
+            bg-[#E11D2E]
+            rounded-full
+            blur-[190px]
+          "
         />
-        {/* Thicker Purple Smoke */}
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} 
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }} 
-          className="absolute bottom-[-10%] left-[-5%] w-[800px] h-[800px] bg-[#6A00FF] rounded-full blur-[200px]" 
+
+        {/* PURPLE SMOKE */}
+
+        <motion.div
+          animate={{
+            x: [0, -30, 25, 0],
+            y: [0, 25, -20, 0],
+            scale: [1, 0.96, 1.08, 1],
+            opacity: [0.14, 0.22, 0.17, 0.14],
+          }}
+          transition={{
+            duration: 28,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="
+            absolute
+            bottom-[-20%]
+            left-[-10%]
+            w-[900px]
+            h-[900px]
+            bg-[#6A00FF]
+            rounded-full
+            blur-[200px]
+          "
         />
-        
-        {/* The Slope-Panned Spinning Vinyl - Positioned behind the slider */}
-        <div className="absolute top-[20%] right-[-10%] scale-[1.2] opacity-80">
+
+        {/* CENTRAL FLUID GLOW */}
+
+        <motion.div
+          animate={{
+            x: [0, 30, -25, 0],
+            y: [0, -20, 25, 0],
+            scale: [1, 1.12, 0.94, 1],
+            opacity: [0.08, 0.16, 0.10, 0.08],
+          }}
+          transition={{
+            duration: 22,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="
+            absolute
+            top-[35%]
+            left-[30%]
+            w-[500px]
+            h-[500px]
+            bg-[#B146FF]
+            rounded-full
+            blur-[190px]
+          "
+        />
+
+        {/* =================================================
+            LARGE FLOATING VINYL
+
+            BIG
+            SLANTED
+            ~75% INSIDE
+            ~25% OUTSIDE SCREEN
+
+            We are NOT changing FloatingVinyl itself yet.
+            ================================================= */}
+
+        <motion.div
+          animate={{
+            y: [0, -14, 0],
+            rotate: [18, 21, 18],
+            scale: [1, 1.025, 1],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="
+            absolute
+            top-[9%]
+            right-[-12%]
+            sm:right-[-11%]
+            lg:right-[-10%]
+            w-[520px]
+            h-[520px]
+            sm:w-[640px]
+            sm:h-[640px]
+            lg:w-[780px]
+            lg:h-[780px]
+            opacity-[0.90]
+          "
+        >
           <FloatingVinyl />
-        </div>
+        </motion.div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-6 relative z-10 flex flex-col pt-12 pb-6">
-        
-        {/* =========================================
-            MAIN HERO & ROTATING SLIDER
-            ========================================= */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 mb-16 min-h-[500px]">
-          
-          {/* Left Side: Typography */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center">
-            <motion.h1 
-              initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}
-              className="font-['Orbitron'] text-[100px] sm:text-[130px] leading-none font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-[#B146FF] to-[#6A00FF] drop-shadow-[0_0_30px_rgba(106,0,255,0.4)] mb-4"
-            >
-              VINYLR
-            </motion.h1>
+      {/* ===================================================
+          MAIN CONTENT
+          =================================================== */}
 
-            <motion.h2 
-              initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.1 }}
-              className="text-2xl sm:text-3xl tracking-[0.2em] font-bold text-white mb-6 uppercase"
+      <main
+        className="
+          max-w-[1450px]
+          mx-auto
+          px-5
+          sm:px-8
+          lg:px-12
+          relative
+          z-10
+          pt-10
+          pb-6
+        "
+      >
+        {/* =================================================
+            HERO
+            ================================================= */}
+
+        <section
+          className="
+            min-h-[650px]
+            flex
+            flex-col
+            lg:flex-row
+            items-center
+            justify-between
+            gap-12
+            mb-12
+          "
+        >
+          {/* =================================================
+              LEFT SIDE
+              ================================================= */}
+
+          <div
+            className="
+              w-full
+              lg:w-[52%]
+              flex
+              flex-col
+              justify-center
+              relative
+              z-20
+            "
+          >
+            {/* BIG PURPLE GLOSSY VINYLR */}
+
+         <motion.h1
+  initial={{
+    opacity: 0,
+    x: -35,
+    filter: "blur(12px)",
+  }}
+  animate={{
+    opacity: 1,
+    x: 0,
+    filter: "blur(0px)",
+  }}
+  transition={{
+    duration: 1,
+    ease: "easeOut",
+  }}
+  className="
+    relative
+    font-['Orbitron']
+    text-[72px]
+    sm:text-[105px]
+    lg:text-[125px]
+    leading-[0.82]
+    font-black
+    italic
+    tracking-[-0.07em]
+    text-transparent
+    bg-clip-text
+    bg-gradient-to-r
+    from-[#F5E9FF]
+    via-[#C77DFF]
+    via-[#B146FF]
+    to-[#6A00FF]
+    drop-shadow-[0_0_28px_rgba(177,70,255,0.55)]
+    mb-7
+    select-none
+  "
+>
+  VINYLR
+</motion.h1>
+            {/* SUBTITLE */}
+
+            <motion.h2
+              initial={{
+                opacity: 0,
+                x: -25,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
+              transition={{
+                duration: 0.8,
+                delay: 0.15,
+              }}
+              className="
+                text-xl
+                sm:text-2xl
+                lg:text-3xl
+                tracking-[0.22em]
+                font-bold
+                text-white
+                uppercase
+                mb-6
+              "
             >
               Music. Merch. Moments.
             </motion.h2>
 
-            <motion.p 
-              initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-[#A09CA3] text-lg sm:text-xl max-w-lg mb-10 font-light leading-relaxed tracking-wide"
+            {/* DESCRIPTION */}
+
+            <motion.p
+              initial={{
+                opacity: 0,
+                x: -25,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
+              transition={{
+                duration: 0.8,
+                delay: 0.25,
+              }}
+              className="
+                text-[#AAA5AE]
+                text-base
+                sm:text-lg
+                lg:text-xl
+                max-w-xl
+                mb-10
+                font-light
+                leading-relaxed
+                tracking-wide
+              "
             >
-              Discover timeless music, exclusive merchandise, and unforgettable experiences — all in one place.
+              Discover timeless music, exclusive
+              merchandise, and unforgettable
+              experiences — all in one place.
             </motion.p>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}
-              className="flex items-center gap-6"
+            {/* BUTTONS */}
+
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                duration: 0.8,
+                delay: 0.35,
+              }}
+              className="
+                flex
+                flex-wrap
+                items-center
+                gap-5
+              "
             >
-              <Link to="/trending" className="px-10 py-4 rounded-xl font-bold text-lg text-white bg-[#E11D2E] hover:bg-[#8B0E1A] shadow-[0_0_20px_rgba(225,29,46,0.4)] transition-all uppercase tracking-widest">
+              <Link
+                to="/trending"
+                className="
+                  group
+                  px-9
+                  py-4
+                  rounded-xl
+                  font-bold
+                  text-base
+                  sm:text-lg
+                  text-white
+                  bg-gradient-to-b
+                  from-[#FF5965]
+                  via-[#E11D2E]
+                  to-[#8B0E1A]
+                  border
+                  border-[#FF6975]/40
+                  shadow-[0_0_30px_rgba(225,29,46,0.35)]
+                  hover:shadow-[0_0_45px_rgba(225,29,46,0.60)]
+                  hover:-translate-y-1
+                  transition-all
+                  uppercase
+                  tracking-widest
+                  flex
+                  items-center
+                  gap-3
+                "
+              >
                 Explore Now
+
+                <ArrowRight
+                  className="
+                    w-5
+                    h-5
+                    group-hover:translate-x-1
+                    transition-transform
+                  "
+                />
               </Link>
-              <Link to="/merch" className="px-10 py-4 rounded-xl font-bold text-lg text-white border border-white/20 hover:border-white/60 bg-white/5 hover:bg-white/10 transition-all uppercase tracking-widest">
+
+              <Link
+                to="/merch"
+                className="
+                  px-9
+                  py-4
+                  rounded-xl
+                  font-bold
+                  text-base
+                  sm:text-lg
+                  text-white
+                  border
+                  border-white/15
+                  hover:border-[#B146FF]/70
+                  bg-white/[0.035]
+                  hover:bg-[#6A00FF]/10
+                  backdrop-blur-xl
+                  transition-all
+                  uppercase
+                  tracking-widest
+                "
+              >
                 Shop Merch
               </Link>
             </motion.div>
+
+            {/* SMALL STATUS */}
+
+            <motion.div
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              transition={{
+                delay: 0.9,
+              }}
+              className="
+                mt-10
+                flex
+                items-center
+                gap-3
+                text-white/40
+                text-xs
+                uppercase
+                tracking-[0.2em]
+              "
+            >
+              <span className="relative flex h-2.5 w-2.5">
+                <span
+                  className="
+                    animate-ping
+                    absolute
+                    inline-flex
+                    h-full
+                    w-full
+                    rounded-full
+                    bg-[#B146FF]
+                    opacity-70
+                  "
+                />
+
+                <span
+                  className="
+                    relative
+                    inline-flex
+                    rounded-full
+                    h-2.5
+                    w-2.5
+                    bg-[#B146FF]
+                  "
+                />
+              </span>
+
+              Curated for music lovers
+            </motion.div>
           </div>
 
-          {/* Right Side: Automated Image Slider */}
-          <div className="w-full lg:w-1/2 h-[500px] flex items-center justify-center relative perspective-[1200px]">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentSlide}
-                initial={{ opacity: 0, x: 200, rotateY: -30, scale: 0.8 }}
-                animate={{ opacity: 1, x: 0, rotateY: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -200, rotateY: 30, scale: 0.8 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="w-[320px] h-[450px] sm:w-[400px] rounded-3xl border border-white/10 bg-gradient-to-br from-[#8B0E1A] to-[#E11D2E] shadow-2xl shadow-[#E11D2E]/50 flex flex-col relative overflow-hidden group"
+          {/* =================================================
+              RIGHT SIDE — HERO ALBUM CARD
+              ================================================= */}
+
+          <div
+            className="
+              w-full
+              lg:w-[48%]
+              h-[560px]
+              flex
+              items-center
+              justify-center
+              relative
+              perspective-[1200px]
+              z-20
+            "
+          >
+            {/* LOADING */}
+
+            {isLoading ? (
+              <div
+                className="
+                  w-[330px]
+                  h-[450px]
+                  sm:w-[400px]
+                  sm:h-[535px]
+                  rounded-[2rem]
+                  border
+                  border-white/10
+                  bg-white/[0.035]
+                  backdrop-blur-xl
+                  flex
+                  flex-col
+                  items-center
+                  justify-center
+                  gap-5
+                "
               >
-                {/* IMAGE RENDERING LOGIC */}
-<div className="absolute inset-0 z-0">
+                <Disc3
+                  className="
+                    w-12
+                    h-12
+                    text-[#B146FF]
+                    animate-spin
+                  "
+                />
 
-    {sliderItems[currentSlide]?.imageUrl ? (
+                <span
+                  className="
+                    text-white/40
+                    text-xs
+                    uppercase
+                    tracking-[0.25em]
+                  "
+                >
+                  Loading vinyl collection
+                </span>
+              </div>
+            ) : currentAlbum ? (
+              <>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={
+                      currentAlbum.id ||
+                      currentAlbum._id ||
+                      currentSlide
+                    }
+                    initial={{
+                      opacity: 0,
+                      x: 150,
+                      rotateY: -18,
+                      scale: 0.88,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      x: 0,
+                      rotateY: 0,
+                      rotateZ: 0,
+                      scale: 1,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      x: -150,
+                      rotateY: 18,
+                      rotateZ: 0,
+                      scale: 0.88,
+                    }}
+                    transition={{
+                      duration: 0.75,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="
+                      w-[330px]
+                      h-[450px]
+                      sm:w-[400px]
+                      sm:h-[535px]
+                      lg:w-[420px]
+                      lg:h-[555px]
+                      rounded-[2rem]
+                      border
+                      border-white/15
+                      bg-black
+                      shadow-[0_30px_100px_rgba(106,0,255,0.28)]
+                      relative
+                      overflow-hidden
+                      group
+                      z-20
+                    "
+                  >
+                    {/* =================================================
+                        ALBUM COVER
 
-        <img
-            src={sliderItems[currentSlide].imageUrl}
-            alt={sliderItems[currentSlide].title}
-            className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-700"
-        />
+                        THIS IS GUARANTEED TO BE AN iTUNES COVER
+                        BECAUSE ONLY validAlbums reach this point.
+                        ================================================= */}
 
-    ) : (
+                    <div className="absolute inset-0 z-0">
+                      <img
+                        src={currentAlbum.imageUrl}
+                        alt={`${currentAlbum.title} by ${currentAlbum.artist}`}
+                        className="
+                          w-full
+                          h-full
+                          object-cover
+                          opacity-90
+                          group-hover:scale-[1.045]
+                          transition-transform
+                          duration-[1200ms]
+                        "
+                      />
+                    </div>
 
-        <div className="w-full h-full bg-[#1A1A1A] flex items-center justify-center border-4 border-dashed border-white/10">
+                    {/* DARK CINEMATIC GRADIENT */}
 
-            <span className="text-white/30 text-sm font-bold uppercase">
-                No Image
-            </span>
+                    <div
+                      className="
+                        absolute
+                        inset-0
+                        bg-gradient-to-t
+                        from-black
+                        via-black/20
+                        to-transparent
+                        z-10
+                        pointer-events-none
+                      "
+                    />
 
-        </div>
+                    {/* TOP GLOSS */}
 
-    )}
+                    <div
+                      className="
+                        absolute
+                        top-0
+                        left-0
+                        right-0
+                        h-[32%]
+                        bg-gradient-to-b
+                        from-white/[0.14]
+                        via-white/[0.035]
+                        to-transparent
+                        pointer-events-none
+                        z-20
+                      "
+                    />
 
-</div>
+                    {/* PURPLE EDGE */}
 
-{/* Glossy Overlay */}
-<div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0F]/90 via-transparent to-white/10 pointer-events-none z-10" />
+                    <div
+                      className="
+                        absolute
+                        inset-0
+                        rounded-[2rem]
+                        ring-1
+                        ring-inset
+                        ring-white/10
+                        group-hover:ring-[#B146FF]/50
+                        transition-all
+                        duration-500
+                        pointer-events-none
+                        z-30
+                      "
+                    />
 
-<span className="absolute font-['Orbitron'] text-9xl text-white/5 font-black italic -rotate-12 select-none z-10 top-10 right-0">
-    V
-</span>
+                    {/* SUBTLE V WATERMARK */}
 
-<div className="relative z-20 mt-auto p-8 text-center">
+                    <span
+                      className="
+                        absolute
+                        top-5
+                        right-[-20px]
+                        font-['Orbitron']
+                        text-[120px]
+                        text-white/[0.055]
+                        font-black
+                        italic
+                        select-none
+                        z-10
+                        pointer-events-none
+                      "
+                    >
+                      V
+                    </span>
 
-    <h3 className="text-3xl font-bold text-white tracking-widest uppercase drop-shadow-lg">
+                    {/* ALBUM INFORMATION */}
 
-        {sliderItems[currentSlide]?.title}
+                    <div
+                      className="
+                        absolute
+                        left-0
+                        right-0
+                        bottom-0
+                        z-40
+                        p-7
+                        sm:p-8
+                      "
+                    >
+                      <div
+                        className="
+                          inline-flex
+                          items-center
+                          gap-2
+                          px-3
+                          py-1.5
+                          rounded-full
+                          bg-black/45
+                          backdrop-blur-md
+                          border
+                          border-white/10
+                          mb-4
+                        "
+                      >
+                        <span
+                          className="
+                            w-1.5
+                            h-1.5
+                            rounded-full
+                            bg-[#E11D2E]
+                            shadow-[0_0_10px_rgba(225,29,46,0.9)]
+                          "
+                        />
 
-    </h3>
+                        <span
+                          className="
+                            text-white/75
+                            text-[9px]
+                            font-bold
+                            uppercase
+                            tracking-[0.2em]
+                          "
+                        >
+                          Featured Album
+                        </span>
+                      </div>
 
-    <p className="text-[#B146FF] text-lg mt-2">
+                      <h3
+                        className="
+                          text-2xl
+                          sm:text-3xl
+                          font-black
+                          text-white
+                          tracking-wide
+                          uppercase
+                          leading-tight
+                          drop-shadow-[0_3px_15px_rgba(0,0,0,0.8)]
+                        "
+                      >
+                        {currentAlbum.title}
+                      </h3>
 
-        {sliderItems[currentSlide]?.artist}
+                      <p
+                        className="
+                          text-[#D08CFF]
+                          text-base
+                          sm:text-lg
+                          mt-2
+                          font-medium
+                          tracking-wide
+                        "
+                      >
+                        {currentAlbum.artist}
+                      </p>
 
-    </p>
+                      {/* NO PRICE HERE */}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
 
-</div>
+                {/* SLIDER DOTS */}
 
-</motion.div>
-
-</AnimatePresence>
-
-<div className="absolute -bottom-8 flex items-center justify-center gap-3 w-full">
-
-    {sliderItems.map((_, index) => (
-
-        <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-                index === currentSlide
-                    ? "w-10 bg-[#E11D2E] shadow-[0_0_15px_rgba(225,29,46,0.8)]"
-                    : "w-2 bg-white/20"
-            }`}
-        />
-
-    ))}
-
-</div>
-          </div>
-        </div>
-
-        {/* Feature Badges */}
-        <div className="w-full border-t border-white/10 py-10 mb-8 mt-12">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-            {FEATURES.map((feature, i) => (
-              <div key={i} className="flex items-center gap-4 group">
-                <div className="w-10 h-10 rounded-lg bg-[#E11D2E]/10 flex items-center justify-center group-hover:bg-[#E11D2E]/20 transition-colors">
-                  <feature.icon className="w-5 h-5 text-[#E11D2E]" />
-                </div>
+                {sliderItems.length > 1 && (
+                  <div
+                    className="
+                      absolute
+                      -bottom-4
+                      flex
+                      items-center
+                      justify-center
+                      gap-3
+                      w-full
+                      z-40
+                    "
+                  >
+                    {sliderItems.map(
+                      (album, index) => (
+                        <button
+                          key={`dot-${
+                            album.id ||
+                            album._id ||
+                            index
+                          }`}
+                          type="button"
+                          onClick={() =>
+                            setCurrentSlide(index)
+                          }
+                          aria-label={`Show ${album.title}`}
+                          className={`
+                            h-1.5
+                            rounded-full
+                            transition-all
+                            duration-500
+                            ${
+                              index === currentSlide
+                                ? `
+                                  w-11
+                                  bg-[#B146FF]
+                                  shadow-[0_0_16px_rgba(177,70,255,0.9)]
+                                `
+                                : `
+                                  w-2
+                                  bg-white/20
+                                  hover:bg-white/50
+                                `
+                            }
+                          `}
+                        />
+                      )
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              /*
+               * This is NOT a hero album card.
+               * It only appears when there are zero albums
+               * with valid iTunes artwork.
+               */
+              <div
+                className="
+                  w-[330px]
+                  h-[450px]
+                  rounded-[2rem]
+                  border
+                  border-white/10
+                  bg-white/[0.025]
+                  flex
+                  items-center
+                  justify-center
+                  text-center
+                  p-8
+                "
+              >
                 <div>
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">{feature.title}</h4>
-                  <p className="text-[10px] text-[#A09CA3] tracking-wide">{feature.desc}</p>
+                  <Disc3
+                    className="
+                      w-12
+                      h-12
+                      mx-auto
+                      mb-4
+                      text-white/15
+                    "
+                  />
+
+                  <p
+                    className="
+                      text-white/35
+                      text-xs
+                      uppercase
+                      tracking-[0.2em]
+                    "
+                  >
+                    No album artwork available
+                  </p>
                 </div>
               </div>
-            ))}
+            )}
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* =========================================
-          DYNAMIC FOOTER: INFINITE MARQUEES
-          ========================================= */}
-      <div className="w-full bg-[#060818]/60 border-t border-white/5 py-12 backdrop-blur-md relative overflow-hidden z-10">
-        
-        {/* Row 1: Top Sales */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 px-10 mb-6">
-            <Flame className="w-5 h-5 text-[#E11D2E]" />
-            <h3 className="text-xl font-bold text-white tracking-widest uppercase">Top Sales of the Week</h3>
+        {/* =================================================
+            FEATURE STRIP
+            ================================================= */}
+
+        <section
+          className="
+            w-full
+            border-t
+            border-white/[0.08]
+            border-b
+            border-white/[0.05]
+            py-9
+            mb-8
+          "
+        >
+          <div
+            className="
+              grid
+              grid-cols-2
+              md:grid-cols-5
+              gap-6
+            "
+          >
+            {FEATURES.map(
+              (feature, index) => {
+                const Icon = feature.icon;
+
+                return (
+                  <motion.div
+                    key={feature.title}
+                    initial={{
+                      opacity: 0,
+                      y: 15,
+                    }}
+                    whileInView={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    viewport={{
+                      once: true,
+                    }}
+                    transition={{
+                      delay:
+                        index * 0.05,
+                    }}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      group
+                    "
+                  >
+                    <div
+                      className="
+                        w-11
+                        h-11
+                        rounded-xl
+                        bg-[#E11D2E]/10
+                        border
+                        border-[#E11D2E]/10
+                        flex
+                        items-center
+                        justify-center
+                        group-hover:bg-[#E11D2E]/20
+                        group-hover:border-[#E11D2E]/30
+                        transition-all
+                        flex-shrink-0
+                      "
+                    >
+                      <Icon
+                        className="
+                          w-5
+                          h-5
+                          text-[#E11D2E]
+                        "
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <h4
+                        className="
+                          text-xs
+                          sm:text-sm
+                          font-bold
+                          text-white
+                          uppercase
+                          tracking-wider
+                          truncate
+                        "
+                      >
+                        {feature.title}
+                      </h4>
+
+                      <p
+                        className="
+                          text-[9px]
+                          sm:text-[10px]
+                          text-[#8F8A92]
+                          tracking-wide
+                          mt-0.5
+                        "
+                      >
+                        {feature.desc}
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              }
+            )}
           </div>
-          
-          <div className="w-full overflow-hidden whitespace-nowrap flex group">
-            <motion.div 
-              className="flex gap-6 w-max pl-6"
-              animate={{ x: ["-50%", "0%"] }}
-              transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-            >
-              {[...topSales, ...topSales].map((item, index) => (
-                <div key={`sales-${index}`} className="w-72 h-24 bg-[#120E14] border border-white/10 rounded-2xl p-3 flex items-center gap-4 flex-shrink-0 hover:border-[#E11D2E]/50 transition-colors cursor-pointer">
-                  
-                  {/* IMAGE RENDERING LOGIC */}
-                  <div className="w-16 h-16 rounded-xl bg-[#1A1A1A] shadow-inner flex-shrink-0 relative overflow-hidden border border-white/5">
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[8px] text-white/30 uppercase font-bold text-center">Img</div>
-                    )}
+        </section>
+      </main>
+
+      {/* ===================================================
+          MARQUEES
+          =================================================== */}
+
+      {(topSales.length > 0 ||
+        topArtists.length > 0) && (
+        <section
+          className="
+            w-full
+            bg-[#060509]/85
+            border-t
+            border-white/[0.05]
+            py-12
+            backdrop-blur-xl
+            relative
+            overflow-hidden
+            z-10
+          "
+        >
+          {/* =================================================
+              TOP SALES
+              ================================================= */}
+
+          {topSales.length > 0 && (
+            <div className="mb-14">
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  px-6
+                  sm:px-10
+                  mb-6
+                "
+              >
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                  "
+                >
+                  <div
+                    className="
+                      w-9
+                      h-9
+                      rounded-xl
+                      bg-[#E11D2E]/10
+                      border
+                      border-[#E11D2E]/20
+                      flex
+                      items-center
+                      justify-center
+                    "
+                  >
+                    <Flame
+                      className="
+                        w-5
+                        h-5
+                        text-[#E11D2E]
+                      "
+                    />
                   </div>
 
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-[#E11D2E] text-[10px] font-bold uppercase tracking-widest mb-1">{item.genre}</span>
-                    <h4 className="text-white text-sm font-semibold truncate tracking-wide">{item.title}</h4>
+                  <div>
+                    <p
+                      className="
+                        text-[#E11D2E]
+                        text-[9px]
+                        font-bold
+                        uppercase
+                        tracking-[0.25em]
+                      "
+                    >
+                      Trending Collection
+                    </p>
+
+                    <h3
+                      className="
+                        text-lg
+                        sm:text-xl
+                        font-bold
+                        text-white
+                        tracking-widest
+                        uppercase
+                      "
+                    >
+                      Top Sales of the Week
+                    </h3>
                   </div>
                 </div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
 
-        {/* Row 2: Top Artists */}
-        <div>
-          <div className="flex items-center gap-3 px-10 mb-6">
-            <Star className="w-5 h-5 text-[#B146FF]" />
-            <h3 className="text-xl font-bold text-white tracking-widest uppercase">Top Artists & Bands</h3>
-          </div>
-          
-          <div className="w-full overflow-hidden whitespace-nowrap flex group">
-            <motion.div 
-              className="flex gap-6 w-max pl-6"
-              animate={{ x: ["-50%", "0%"] }}
-              transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
-            >
-              {[...TOP_ARTISTS, ...TOP_ARTISTS].map((artist, index) => (
-                <div key={`artist-${index}`} className="w-72 h-24 bg-[#120E14] border border-white/10 rounded-2xl p-3 flex items-center gap-4 flex-shrink-0 hover:border-[#B146FF]/50 transition-colors cursor-pointer">
-                  
-                  {/* IMAGE RENDERING LOGIC */}
-                  <div className="w-16 h-16 rounded-full bg-[#1A1A1A] shadow-inner flex-shrink-0 relative overflow-hidden border border-white/5">
-                    {artist.image ? (
-                      <img src={artist.image} alt={artist.name} className="w-full h-full object-cover" />
-                    ) : (
-                       <div className="w-full h-full flex items-center justify-center text-[8px] text-white/30 uppercase font-bold text-center">Img</div>
-                    )}
+                <Link
+                  to="/albums"
+                  className="
+                    hidden
+                    sm:flex
+                    items-center
+                    gap-2
+                    text-white/40
+                    hover:text-white
+                    text-xs
+                    uppercase
+                    tracking-widest
+                    transition-colors
+                  "
+                >
+                  View All
+                  <ArrowRight
+                    className="w-4 h-4"
+                  />
+                </Link>
+              </div>
+
+              <div className="w-full overflow-hidden">
+                <motion.div
+                  className="
+                    flex
+                    gap-5
+                    w-max
+                    pl-6
+                  "
+                  animate={{
+                    x: ["-50%", "0%"],
+                  }}
+                  transition={{
+                    duration: 60,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                >
+                  {[...topSales, ...topSales].map(
+                    (item, index) => (
+                      <div
+                        key={`sales-${
+                          item.id ||
+                          item._id ||
+                          index
+                        }-${index}`}
+                        className="
+                          w-[340px]
+                          sm:w-[360px]
+                          h-[118px]
+                          bg-[#120E14]/90
+                          border
+                          border-white/[0.08]
+                          rounded-2xl
+                          p-4
+                          flex
+                          items-center
+                          gap-5
+                          flex-shrink-0
+                          hover:border-[#E11D2E]/60
+                          hover:bg-[#170E13]
+                          hover:-translate-y-1
+                          transition-all
+                          group
+                        "
+                      >
+                        <div
+                          className="
+                            w-20
+                            h-20
+                            rounded-xl
+                            bg-black
+                            flex-shrink-0
+                            overflow-hidden
+                            border
+                            border-white/10
+                            shadow-[0_10px_30px_rgba(0,0,0,0.4)]
+                          "
+                        >
+                          <img
+                            src={item.imageUrl}
+                            alt={item.title}
+                            loading="lazy"
+                            className="
+                              w-full
+                              h-full
+                              object-cover
+                              group-hover:scale-110
+                              transition-transform
+                              duration-700
+                            "
+                          />
+                        </div>
+
+                        <div
+                          className="
+                            flex
+                            flex-col
+                            overflow-hidden
+                            min-w-0
+                          "
+                        >
+                          <span
+                            className="
+                              text-[#E11D2E]
+                              text-[9px]
+                              font-bold
+                              uppercase
+                              tracking-[0.2em]
+                              mb-1
+                            "
+                          >
+                            {item.genre ||
+                              item.primaryGenreName ||
+                              "Album"}
+                          </span>
+
+                          <h4
+                            className="
+                              text-white
+                              text-sm
+                              sm:text-base
+                              font-semibold
+                              truncate
+                              tracking-wide
+                            "
+                          >
+                            {item.title}
+                          </h4>
+
+                          <p
+                            className="
+                              text-white/40
+                              text-xs
+                              truncate
+                              mt-1
+                            "
+                          >
+                            {item.artist}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </motion.div>
+              </div>
+            </div>
+          )}
+
+          {/* =================================================
+              TOP ARTISTS
+              ================================================= */}
+
+          {topArtists.length > 0 && (
+            <div>
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  px-6
+                  sm:px-10
+                  mb-6
+                "
+              >
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                  "
+                >
+                  <div
+                    className="
+                      w-9
+                      h-9
+                      rounded-xl
+                      bg-[#6A00FF]/10
+                      border
+                      border-[#B146FF]/20
+                      flex
+                      items-center
+                      justify-center
+                    "
+                  >
+                    <Star
+                      className="
+                        w-5
+                        h-5
+                        text-[#B146FF]
+                      "
+                    />
                   </div>
 
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-[#B146FF] text-[10px] font-bold uppercase tracking-widest mb-1">{artist.tag}</span>
-                    <h4 className="text-white text-sm font-semibold truncate tracking-wide">{artist.name}</h4>
+                  <div>
+                    <p
+                      className="
+                        text-[#B146FF]
+                        text-[9px]
+                        font-bold
+                        uppercase
+                        tracking-[0.25em]
+                      "
+                    >
+                      From Your Collection
+                    </p>
+
+                    <h3
+                      className="
+                        text-lg
+                        sm:text-xl
+                        font-bold
+                        text-white
+                        tracking-widest
+                        uppercase
+                      "
+                    >
+                      Top Artists & Bands
+                    </h3>
                   </div>
                 </div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
 
-      </div>
+                <Link
+                  to="/albums"
+                  className="
+                    hidden
+                    sm:flex
+                    items-center
+                    gap-2
+                    text-white/40
+                    hover:text-white
+                    text-xs
+                    uppercase
+                    tracking-widest
+                    transition-colors
+                  "
+                >
+                  Explore
+                  <ArrowRight
+                    className="w-4 h-4"
+                  />
+                </Link>
+              </div>
+
+              <div className="w-full overflow-hidden">
+                <motion.div
+                  className="
+                    flex
+                    gap-5
+                    w-max
+                    pl-6
+                  "
+                  animate={{
+                    x: ["-50%", "0%"],
+                  }}
+                  transition={{
+                    duration: 60,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                >
+                  {[...topArtists, ...topArtists].map(
+                    (artist, index) => (
+                      <div
+                        key={`artist-${artist.name}-${index}`}
+                        className="
+                          w-[340px]
+                          sm:w-[360px]
+                          h-[118px]
+                          bg-[#120E14]/90
+                          border
+                          border-white/[0.08]
+                          rounded-2xl
+                          p-4
+                          flex
+                          items-center
+                          gap-5
+                          flex-shrink-0
+                          hover:border-[#B146FF]/60
+                          hover:bg-[#130D1B]
+                          hover:-translate-y-1
+                          transition-all
+                          group
+                        "
+                      >
+                        {/* ARTIST IMAGE */}
+
+                        <div
+                          className="
+                            w-20
+                            h-20
+                            rounded-full
+                            bg-black
+                            flex-shrink-0
+                            overflow-hidden
+                            border
+                            border-[#B146FF]/25
+                            shadow-[0_0_25px_rgba(177,70,255,0.12)]
+                          "
+                        >
+                          <img
+                            src={artist.image}
+                            alt={`${artist.name} artwork`}
+                            loading="lazy"
+                            className="
+                              w-full
+                              h-full
+                              object-cover
+                              group-hover:scale-110
+                              transition-transform
+                              duration-700
+                            "
+                          />
+                        </div>
+
+                        {/* ARTIST INFO */}
+
+                        <div
+                          className="
+                            flex
+                            flex-col
+                            overflow-hidden
+                            min-w-0
+                          "
+                        >
+                          <span
+                            className="
+                              text-[#B146FF]
+                              text-[9px]
+                              font-bold
+                              uppercase
+                              tracking-[0.2em]
+                              mb-1
+                            "
+                          >
+                            {artist.genre ||
+                              "Music"}
+                          </span>
+
+                          <h4
+                            className="
+                              text-white
+                              text-sm
+                              sm:text-base
+                              font-semibold
+                              truncate
+                              tracking-wide
+                            "
+                          >
+                            {artist.name}
+                          </h4>
+
+                          <p
+                            className="
+                              text-white/40
+                              text-xs
+                              mt-1
+                            "
+                          >
+                            {artist.albumCount}{" "}
+                            {artist.albumCount === 1
+                              ? "Album"
+                              : "Albums"}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </motion.div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 };

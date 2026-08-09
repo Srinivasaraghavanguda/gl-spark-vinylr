@@ -162,11 +162,26 @@ setCheckoutStep("SUCCESS");
                   {cartItems.map((item) => (
                     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95, x: -50 }} key={item.cartKey || `${item.productType || 'album'}-${item.id}`} className="flex flex-col sm:flex-row items-center gap-6 p-5 bg-[#120E14]/80 backdrop-blur-xl border border-white/10 rounded-2xl hover:border-[#E11D2E]/50 transition-colors group shadow-lg">
                       {/* BLANK IMAGE PLACEHOLDER */}
-                      <div className="w-28 h-28 bg-[#1A1A1A] rounded-xl flex-shrink-0 border border-white/5 relative overflow-hidden">
-                        <div className={`absolute top-2 left-2 ${item.badgeColor || 'bg-[#E11D2E]'} text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-lg`}>
-                          {item.genre || item.category || 'ITEM'}
-                        </div>
-                      </div>
+                      {/* PRODUCT IMAGE */}
+<div className="w-28 h-28 bg-[#1A1A1A] rounded-xl flex-shrink-0 border border-white/5 relative overflow-hidden">
+
+    {item.imageUrl ? (
+        <img
+            src={item.imageUrl}
+            alt={item.title || item.name}
+            className="w-full h-full object-cover"
+        />
+    ) : (
+        <div className="w-full h-full flex items-center justify-center text-white/20">
+            <ShoppingCart className="w-8 h-8" />
+        </div>
+    )}
+
+    <div className={`absolute top-2 left-2 ${item.badgeColor || 'bg-[#E11D2E]'} text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-lg`}>
+        {item.genre || item.category || 'ITEM'}
+    </div>
+
+</div>
                       
                       {/* Details */}
                       <div className="flex-1 text-center sm:text-left">

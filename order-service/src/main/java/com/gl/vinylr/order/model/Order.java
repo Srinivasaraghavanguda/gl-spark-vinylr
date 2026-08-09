@@ -19,6 +19,9 @@ public class Order {
     private Long albumId;
 
     @Column(nullable = false)
+private String productName;
+
+    @Column(nullable = false)
     private String productType;
 
     @Column(nullable = false)
@@ -34,6 +37,10 @@ public class Order {
     private String status;
 
     private LocalDateTime orderDate;
+
+private LocalDateTime estimatedDelivery;
+
+private LocalDateTime deliveredOn;
 
     public Order() {
         this.orderDate = LocalDateTime.now();
@@ -52,17 +59,24 @@ public class Order {
     }
 
     public Long getAlbumId() {
-        return albumId;
-    }
+    return albumId;
+}
 
-    public void setAlbumId(Long albumId) {
-        this.albumId = albumId;
-    }
+public void setAlbumId(Long albumId) {
+    this.albumId = albumId;
+}
 
-    public String getProductType() {
-        return productType;
-    }
+public String getProductName() {
+    return productName;
+}
 
+public void setProductName(String productName) {
+    this.productName = productName;
+}
+
+public String getProductType() {
+    return productType;
+}
     public void setProductType(String productType) {
         this.productType = productType;
     }
@@ -106,4 +120,20 @@ public class Order {
     public void setOrderDate(LocalDateTime orderDate) {
         this.orderDate = orderDate;
     }
+
+    public LocalDateTime getEstimatedDelivery() {
+    return estimatedDelivery;
+}
+
+public void setEstimatedDelivery(LocalDateTime estimatedDelivery) {
+    this.estimatedDelivery = estimatedDelivery;
+}
+
+public LocalDateTime getDeliveredOn() {
+    return deliveredOn;
+}
+
+public void setDeliveredOn(LocalDateTime deliveredOn) {
+    this.deliveredOn = deliveredOn;
+}
 }

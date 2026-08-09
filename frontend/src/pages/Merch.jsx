@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import { catalogService } from '../api/catalogService';
 import FloatingVinyl from '../components/Aesthetics/FloatingVinyl';
+import {
+  isFavorite,
+  toggleFavorite
+} from '../utils/favorites';
 
 const Merch = () => {
   const navigate = useNavigate();
@@ -69,29 +73,15 @@ const Merch = () => {
   const getBadgeColor = (category) => {
     const value = String(category || '').toLowerCase();
 
-    if (value.includes('hoodie')) {
-      return 'bg-[#6A00FF]';
-    }
-
-    if (value.includes('shirt')) {
-      return 'bg-[#E11D2E]';
-    }
-
-    if (value.includes('lightstick')) {
-      return 'bg-[#4A00E0]';
-    }
-
-    if (value.includes('toy') || value.includes('plush')) {
-      return 'bg-[#8B0E1A]';
-    }
-
-    if (value.includes('pant')) {
-      return 'bg-[#E11D2E]';
-    }
-
-    if (value.includes('cap')) {
-      return 'bg-[#6A00FF]';
-    }
+    if (value.includes('lightstick')) return 'bg-[#4A00E0]';
+    if (value.includes('shirt')) return 'bg-[#E11D2E]';
+    if (value.includes('hoodie')) return 'bg-[#6A00FF]';
+    if (value.includes('pant')) return 'bg-[#E11D2E]';
+    if (value.includes('plush')) return 'bg-[#8B0E1A]';
+    if (value.includes('portrait')) return 'bg-[#BF953F]';
+    if (value.includes('photocard')) return 'bg-[#A855F7]';
+    if (value.includes('exclusive')) return 'bg-[#4A00E0]';
+    if (value.includes('sticker')) return 'bg-[#E11D2E]';
 
     return 'bg-[#E11D2E]';
   };
@@ -100,17 +90,20 @@ const Merch = () => {
   // DYNAMIC CATEGORIES
   // ONLY DATABASE CATEGORIES ARE SHOWN
   // =========================================
-  const categories = useMemo(() => {
-    const uniqueCategories = [
-      ...new Set(
-        storeItems
-          .map((item) => item.category)
-          .filter(Boolean)
-      ),
-    ];
+  const categories = [
+  'All Merch',
+  'Lightsticks',
+  'T-Shirts',
+  'Hoodies',
+  'Pants',
+  'Plushies',
+  'Portraits',
+  'Photocards',
+  'Exclusive',
+  'Stickers',
+];
 
-    return ['All Merch', ...uniqueCategories];
-  }, [storeItems]);
+
 
   // =========================================
   // CART LOGIC
@@ -244,7 +237,7 @@ const Merch = () => {
   // FILTERED PRODUCTS
   // =========================================
   const filteredItems = useMemo(() => {
-    return storeItems.filter((item) => {
+    const filtered = storeItems.filter((item) => {
       const matchCategory =
         activeCategory === 'All Merch' ||
         String(item.category).toLowerCase() ===
@@ -257,56 +250,141 @@ const Merch = () => {
 
       return matchCategory && matchSearch;
     });
-  }, [
-    storeItems,
-    activeCategory,
-    searchQuery,
-  ]);
+
+    return [...filtered].sort((a, b) => {
+      const soldA = (Number(a.stock) || 0) <= 0;
+      const soldB = (Number(b.stock) || 0) <= 0;
+
+      if (!soldA && soldB) return -1;
+      if (soldA && !soldB) return 1;
+
+      return 0;
+    });
+  }, [storeItems, activeCategory, searchQuery]);
 
   // =========================================
   // UI
   // =========================================
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-white pt-24 pb-12 font-['Oswald'] relative overflow-hidden">
+    <div className="min-h-screen bg-[#0B0B0F] text-white pt-24 pb-12 font-['Oswald'] relative">
 
       <Toaster position="top-right" />
 
       {/* =========================================
           BACKGROUND
           ========================================= */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+      {/* =========================================================
+    CINEMATIC BACKGROUND
+    ========================================================= */}
 
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.35, 0.55, 0.35],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          className="absolute top-[10%] right-[5%] w-[900px] h-[900px] bg-[#E11D2E] rounded-full blur-[200px]"
-        />
+<div className="absolute inset-0 z-0 pointer-events-none">
 
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          className="absolute bottom-[-10%] left-[-5%] w-[800px] h-[800px] bg-[#6A00FF] rounded-full blur-[200px]"
-        />
+  {/* RED SMOKE — RIGHT */}
 
-        <div className="absolute top-[15%] right-[-5%] scale-[1.1] opacity-70">
-          <FloatingVinyl />
-        </div>
+  <motion.div
+    animate={{
+      scale: [1, 1.12, 1],
+      opacity: [0.28, 0.42, 0.28],
+      x: [0, -25, 0],
+    }}
+    transition={{
+      duration: 14,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    }}
+    className="
+      absolute
+      top-[8%]
+      right-[-12%]
+      w-[900px]
+      h-[900px]
+      bg-[#E11D2E]
+      rounded-full
+      blur-[220px]
+    "
+  />
 
-      </div>
+  {/* PURPLE SMOKE — LEFT */}
+
+  <motion.div
+    animate={{
+      scale: [1, 1.18, 1],
+      opacity: [0.22, 0.38, 0.22],
+      x: [0, 45, 0],
+      y: [0, -25, 0],
+    }}
+    transition={{
+      duration: 17,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    }}
+    className="
+      absolute
+      top-[25%]
+      left-[-18%]
+      w-[950px]
+      h-[950px]
+      bg-[#6A00FF]
+      rounded-full
+      blur-[230px]
+    "
+  />
+
+  {/* SECOND PURPLE VEIL */}
+
+  <motion.div
+    animate={{
+      scale: [1, 1.1, 1],
+      opacity: [0.08, 0.18, 0.08],
+    }}
+    transition={{
+      duration: 11,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    }}
+    className="
+      absolute
+      bottom-[-20%]
+      left-[5%]
+      w-[650px]
+      h-[650px]
+      bg-[#A855F7]
+      rounded-full
+      blur-[200px]
+    "
+  />
+
+  {/* FIXED GIANT VINYL */}
+
+  <motion.div
+    animate={{
+      rotate: [18, 21, 18],
+      scale: [1, 1.025, 1],
+    }}
+    transition={{
+      duration: 8,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    }}
+    className="
+      fixed
+      top-[18vh]
+      right-[-15vw]
+      w-[40vw]
+      h-[40vw]
+      min-w-[520px]
+      min-h-[520px]
+      max-w-[720px]
+      max-h-[720px]
+      z-[1]
+      pointer-events-none
+      opacity-80
+    "
+  >
+    <FloatingVinyl />
+  </motion.div>
+
+</div>
 
       {/* =========================================
           MAIN CONTAINER
@@ -555,175 +633,79 @@ const Merch = () => {
             /* =========================================
                 PRODUCT GRID
                 ========================================= */
-            <motion.div
-              layout
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16"
-            >
+            <>
+              {filteredItems.some((item) => (Number(item.stock) || 0) > 0) && (
+                <section>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-1.5 h-7 rounded-full bg-[#E11D2E] shadow-[0_0_15px_rgba(225,29,46,0.7)]" />
+                    <div>
+                      <h2 className="text-xl font-bold uppercase tracking-widest">
+                        Available Now
+                      </h2>
+                      <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">
+                        Ready to order
+                      </p>
+                    </div>
+                  </div>
 
-              <AnimatePresence>
-
-                {filteredItems.map((item) => {
-
-                  const isSoldOut = item.stock <= 0;
-
-                  return (
-
-                    <motion.div
-    layout
-    key={item.id}
-    onClick={() => navigate(`/merch/${item.id}`)}
-    initial={{
-        opacity: 0,
-        scale: 0.9,
-    }}
-                      animate={{
-                        opacity: 1,
-                        scale: 1,
-                      }}
-                      exit={{
-                        opacity: 0,
-                        scale: 0.9,
-                      }}
-                      transition={{
-                        duration: 0.3,
-                      }}
-                      className={`bg-[#120E14]/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col group transition-all ${
-                        isSoldOut
-                          ? 'opacity-60'
-                          : 'hover:border-[#E11D2E]/50 hover:shadow-[0_0_30px_rgba(225,29,46,0.15)]'
-                      }`}
-                    >
-
-                      {/* IMAGE */}
-                      <div className="w-full aspect-[4/5] bg-[#1A1A1A] rounded-xl relative mb-4 overflow-hidden border border-white/5">
-
-                        {item.imageUrl ? (
-
-                          <img
-                            src={item.imageUrl}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
+                  <motion.div
+                    layout
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-14"
+                  >
+                    <AnimatePresence>
+                      {filteredItems
+                        .filter((item) => (Number(item.stock) || 0) > 0)
+                        .map((item) => (
+                          <MerchCard
+                            key={item.id}
+                            item={item}
+                            navigate={navigate}
+                            handleBuyNow={handleBuyNow}
+                            handleAddToCart={handleAddToCart}
                           />
+                        ))}
+                    </AnimatePresence>
+                  </motion.div>
+                </section>
+              )}
 
-                        ) : (
-
-                          <div className="w-full h-full flex items-center justify-center text-white/20 text-sm uppercase tracking-widest">
-                            Image
-                          </div>
-
-                        )}
-
-                        {/* CATEGORY BADGE */}
-                        <div
-                          className={`absolute top-3 left-3 ${
-                            item.badgeColor
-                          } text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-lg`}
-                        >
-                          {item.category}
-                        </div>
-
-                        {/* HEART */}
-                        <button className="absolute top-3 right-3 text-white/50 hover:text-[#E11D2E] transition-colors">
-
-                          <Heart className="w-5 h-5" />
-
-                        </button>
-
-                      </div>
-
-                      {/* DETAILS */}
-                      <div className="flex-1 flex flex-col">
-
-                        <h3 className="text-lg font-bold text-white tracking-wide">
-                          {item.title}
-                        </h3>
-
-                        <p className="text-sm text-[#A09CA3] font-light mb-2">
-                          {item.brand}
+              {filteredItems.some((item) => (Number(item.stock) || 0) <= 0) && (
+                <section className="mt-8 pt-10 border-t border-white/[0.07]">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-1.5 h-7 rounded-full bg-[#E11D2E]/50" />
+                      <div>
+                        <h2 className="text-xl font-bold uppercase tracking-widest text-white/55">
+                          Currently Sold Out
+                        </h2>
+                        <p className="text-[10px] text-white/25 uppercase tracking-[0.2em] mt-1">
+                          Available again soon
                         </p>
-
-                        {/* STOCK */}
-                        <div className="mb-4 mt-1">
-
-                          {isSoldOut ? (
-
-                            <span className="text-xs font-bold text-[#E11D2E] tracking-widest uppercase flex items-center gap-1">
-
-                              <span className="w-2 h-2 rounded-full bg-[#E11D2E] animate-pulse" />
-
-                              Sold Out
-
-                            </span>
-
-                          ) : (
-
-                            <span className="text-xs font-bold text-green-400 tracking-widest uppercase flex items-center gap-1">
-
-                              <span className="w-2 h-2 rounded-full bg-green-400" />
-
-                              In Stock
-
-                            </span>
-
-                          )}
-
-                        </div>
-
-                        {/* PRICE */}
-                        <div className="text-right mb-4">
-
-                          <span className="text-2xl font-bold text-[#E11D2E] tracking-wider">
-                            ₹{item.price}
-                          </span>
-
-                        </div>
-
-                        {/* BUTTONS */}
-                        <div className="grid grid-cols-2 gap-3 mt-auto">
-
-                          <button
-                            onClick={(e) => {
-    e.stopPropagation();
-    handleBuyNow(item);
-}}
-                            disabled={isSoldOut}
-                            className={`w-full py-2.5 rounded-lg text-white text-sm font-bold uppercase tracking-widest transition-all ${
-                              isSoldOut
-                                ? 'bg-white/5 text-white/30 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-[#8B0E1A] to-[#E11D2E] hover:shadow-[0_0_15px_rgba(225,29,46,0.4)]'
-                            }`}
-                          >
-                            Buy Now
-                          </button>
-
-                          <button
-                            onClick={(e) => {
-    e.stopPropagation();
-    handleAddToCart(item);
-}}
-                            disabled={isSoldOut}
-                            className={`w-full py-2.5 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${
-                              isSoldOut
-                                ? 'bg-transparent border border-white/5 text-white/30 cursor-not-allowed'
-                                : 'bg-[#0B0B0F] border border-white/20 text-[#A09CA3] hover:text-white hover:border-white/60'
-                            }`}
-                          >
-                            Add To Cart
-                          </button>
-
-                        </div>
-
                       </div>
+                    </div>
+                  </div>
 
-                    </motion.div>
-
-                  );
-
-                })}
-
-              </AnimatePresence>
-
-            </motion.div>
+                  <motion.div
+                    layout
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                  >
+                    <AnimatePresence>
+                      {filteredItems
+                        .filter((item) => (Number(item.stock) || 0) <= 0)
+                        .map((item) => (
+                          <MerchCard
+                            key={item.id}
+                            item={item}
+                            navigate={navigate}
+                            handleBuyNow={handleBuyNow}
+                            handleAddToCart={handleAddToCart}
+                          />
+                        ))}
+                    </AnimatePresence>
+                  </motion.div>
+                </section>
+              )}
+            </>
 
           )}
 
@@ -732,6 +714,385 @@ const Merch = () => {
       </div>
 
     </div>
+  );
+};
+
+
+// =========================================================
+// MERCH CARD
+// =========================================================
+
+const MerchCard = ({
+  item,
+  navigate,
+  handleBuyNow,
+  handleAddToCart
+}) => {
+  const [favorite, setFavorite] = useState(
+    isFavorite(item.id, "MERCH")
+  );
+
+  useEffect(() => {
+    const syncFavorite = () => {
+      setFavorite(isFavorite(item.id, "MERCH"));
+    };
+
+    syncFavorite();
+
+    window.addEventListener(
+      "favoritesUpdated",
+      syncFavorite
+    );
+
+    return () => {
+      window.removeEventListener(
+        "favoritesUpdated",
+        syncFavorite
+      );
+    };
+  }, [item.id]);
+
+  const isSoldOut =
+    (Number(item.stock) || 0) <= 0;
+
+  return (
+    <motion.div
+      layout
+      onClick={() => navigate(`/merch/${item.id}`)}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.3 }}
+      className={`
+        cursor-pointer
+        bg-[#120E14]/80
+        backdrop-blur-xl
+        border
+        border-white/10
+        rounded-2xl
+        p-4
+        flex
+        flex-col
+        group
+        transition-all
+        duration-300
+        ${
+          isSoldOut
+            ? "opacity-55 hover:opacity-70"
+            : "hover:border-[#A855F7]/50 hover:shadow-[0_0_35px_rgba(168,85,247,0.16)] hover:-translate-y-1.5"
+        }
+      `}
+    >
+      <div
+        className="
+          w-full
+          aspect-[4/5]
+          bg-[#1A1A1A]
+          rounded-xl
+          relative
+          mb-4
+          overflow-hidden
+          border
+          border-white/5
+        "
+      >
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.title}
+            className="
+              w-full
+              h-full
+              object-cover
+              transition-transform
+              duration-500
+              group-hover:scale-105
+            "
+          />
+        ) : (
+          <div className="
+            w-full
+            h-full
+            flex
+            items-center
+            justify-center
+            bg-gradient-to-br
+            from-[#120E14]
+            via-[#1B1025]
+            to-[#080808]
+          ">
+            <span className="font-['Orbitron'] text-5xl font-black italic text-[#A855F7]/30">
+              V
+            </span>
+          </div>
+        )}
+
+        <div className="
+          absolute
+          inset-0
+          bg-gradient-to-t
+          from-black/45
+          via-transparent
+          to-white/[0.05]
+          pointer-events-none
+          transition-opacity
+          duration-500
+          group-hover:opacity-80
+        " />
+
+        <div className="
+          absolute
+          inset-0
+          bg-gradient-to-br
+          from-white/[0.08]
+          via-transparent
+          to-[#A855F7]/[0.08]
+          opacity-0
+          group-hover:opacity-100
+          transition-opacity
+          duration-500
+          pointer-events-none
+        " />
+
+        <div
+          className={`
+            absolute
+            top-3
+            left-3
+            ${item.badgeColor || "bg-[#E11D2E]"}
+            text-white
+            text-[10px]
+            font-bold
+            px-2
+            py-1
+            rounded
+            uppercase
+            tracking-wider
+            shadow-lg
+          `}
+        >
+          {item.category}
+        </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+
+            const added = toggleFavorite({
+              id: item.id,
+              type: "MERCH",
+              title: item.title,
+              brand: item.brand,
+              imageUrl: item.imageUrl,
+              price: item.price,
+              stock: item.stock,
+              category: item.category
+            });
+
+            setFavorite(added);
+
+            toast.success(
+              added
+                ? "Added to favourites ❤️"
+                : "Removed from favourites",
+              {
+                style: {
+                  background: "#120E14",
+                  color: "#fff",
+                  border: "1px solid #A855F7"
+                }
+              }
+            );
+          }}
+          className={`
+            absolute
+            top-3
+            right-3
+            z-20
+            w-10
+            h-10
+            rounded-full
+            bg-black/55
+            backdrop-blur-md
+            border
+            flex
+            items-center
+            justify-center
+            transition-all
+            duration-300
+            hover:scale-110
+            active:scale-95
+            ${
+              favorite
+                ? `
+                  border-[#A855F7]
+                  text-[#A855F7]
+                  bg-[#A855F7]/10
+                  shadow-[0_0_18px_rgba(168,85,247,0.55)]
+                `
+                : `
+                  border-white/10
+                  text-white/60
+                  hover:text-[#A855F7]
+                  hover:border-[#A855F7]/50
+                  hover:bg-[#A855F7]/10
+                `
+            }
+          `}
+          aria-label={
+            favorite
+              ? "Remove from favourites"
+              : "Add to favourites"
+          }
+        >
+          <Heart
+            className="w-5 h-5"
+            fill={favorite ? "currentColor" : "none"}
+            strokeWidth={favorite ? 2.5 : 2}
+          />
+        </button>
+
+        {isSoldOut && (
+          <div className="
+            absolute
+            inset-0
+            z-10
+            flex
+            items-center
+            justify-center
+            pointer-events-none
+            bg-black/10
+          ">
+            <span className="
+              px-4
+              py-2
+              rounded-lg
+              bg-black/75
+              backdrop-blur-md
+              border
+              border-[#E11D2E]/40
+              text-[#FF5965]
+              text-xs
+              font-black
+              uppercase
+              tracking-[0.2em]
+              shadow-[0_0_20px_rgba(225,29,46,0.18)]
+            ">
+              Sold Out
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 flex flex-col">
+        <h3 className="text-lg font-bold text-white tracking-wide truncate">
+          {item.title}
+        </h3>
+
+        <p className="text-sm text-[#A09CA3] font-light mb-2 truncate">
+          {item.brand}
+        </p>
+
+        <div className="mb-4 mt-1">
+          {isSoldOut ? (
+            <span className="
+              text-xs
+              font-bold
+              text-[#E11D2E]
+              tracking-widest
+              uppercase
+              flex
+              items-center
+              gap-2
+            ">
+              <span className="w-2 h-2 rounded-full bg-[#E11D2E] animate-pulse" />
+              Sold Out
+            </span>
+          ) : (
+            <span className="
+              text-xs
+              font-bold
+              text-green-400
+              tracking-widest
+              uppercase
+              flex
+              items-center
+              gap-2
+            ">
+              <span className="w-2 h-2 rounded-full bg-green-400" />
+              In Stock
+            </span>
+          )}
+        </div>
+
+        <div className="text-right mb-4">
+          <span className="
+            text-2xl
+            font-bold
+            text-[#E11D2E]
+            tracking-wider
+          ">
+            ₹{Number(item.price || 0).toLocaleString("en-IN")}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mt-auto">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBuyNow(item);
+            }}
+            disabled={isSoldOut}
+            className={`
+              w-full
+              py-2.5
+              rounded-lg
+              text-white
+              text-sm
+              font-bold
+              uppercase
+              tracking-widest
+              transition-all
+              ${
+                isSoldOut
+                  ? "bg-white/5 text-white/30 cursor-not-allowed"
+                  : "bg-gradient-to-r from-[#8B0E1A] to-[#E11D2E] hover:shadow-[0_0_18px_rgba(225,29,46,0.4)]"
+              }
+            `}
+          >
+            Buy Now
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart(item);
+            }}
+            disabled={isSoldOut}
+            className={`
+              w-full
+              py-2.5
+              rounded-lg
+              text-sm
+              font-bold
+              uppercase
+              tracking-widest
+              transition-all
+              ${
+                isSoldOut
+                  ? "bg-transparent border border-white/5 text-white/30 cursor-not-allowed"
+                  : "bg-[#0B0B0F] border border-white/20 text-[#A09CA3] hover:text-white hover:border-[#A855F7]/60 hover:bg-[#A855F7]/5"
+              }
+            `}
+          >
+            Add To Cart
+          </button>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

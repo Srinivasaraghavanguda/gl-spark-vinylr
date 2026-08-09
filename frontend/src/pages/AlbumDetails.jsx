@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShoppingCart, Disc3 } from "lucide-react";
 import toast from "react-hot-toast";
 import { catalogService } from "../api/catalogService";
+import albumImages, { localAlbumImages } from "../data/albumImages";
+import { getAlbumCover } from "../data/albumCoverService";
 
 export default function AlbumDetails() {
 
@@ -10,6 +12,7 @@ export default function AlbumDetails() {
     const navigate = useNavigate();
 
     const [album, setAlbum] = useState(null);
+    const [albumCover, setAlbumCover] = useState(null);
     useEffect(() => {
     console.log("Album State:", album);
 }, [album]);
@@ -26,6 +29,17 @@ export default function AlbumDetails() {
                 console.log("API returned:", data);
 
                 setAlbum(data);
+
+                const albumTitle = albumImages[data.artist];
+
+if (albumTitle) {
+    const cover = await getAlbumCover(
+        data.artist,
+        albumTitle
+    );
+
+    setAlbumCover(cover);
+}
 
             }catch (err) {
 
@@ -78,6 +92,45 @@ export default function AlbumDetails() {
 
     };
 
+const buyNow = () => {
+
+    if (!album || album.stock <= 0) {
+        toast.error("This album is sold out");
+        return;
+    }
+
+    const cart = JSON.parse(
+        localStorage.getItem("vinylr_cart") || "[]"
+    );
+
+    const cartKey = `album-${album.id}`;
+
+    const existing = cart.find(
+        (item) => item.cartKey === cartKey
+    );
+
+    // Add only if this album is not already in the cart
+    if (!existing) {
+        cart.push({
+            ...album,
+            quantity: 1,
+            productType: "ALBUM",
+            cartKey: cartKey
+        });
+
+        localStorage.setItem(
+            "vinylr_cart",
+            JSON.stringify(cart)
+        );
+
+        window.dispatchEvent(
+            new Event("cartUpdated")
+        );
+    }
+
+    navigate("/cart");
+};
+
     if (loading) {
 
         return (
@@ -127,7 +180,7 @@ export default function AlbumDetails() {
                         {album.imageUrl ? (
 
                             <img
-                                src={album.imageUrl}
+                                src={albumCover || album.imageUrl}
                                 alt={album.title}
                                 className="rounded-3xl shadow-2xl w-full"
                             />
@@ -192,19 +245,35 @@ export default function AlbumDetails() {
 
                         </h3>
 
-                        <button
+                        {album.stock > 0 ? (
+    <div className="flex gap-4">
 
-                            onClick={addToCart}
+        {/* ADD TO CART */}
+        <button
+            onClick={addToCart}
+            className="bg-[#E11D2E] px-8 py-4 rounded-xl flex items-center gap-3 hover:bg-red-700 transition"
+        >
+            <ShoppingCart />
+            Add To Cart
+        </button>
 
-                            className="bg-[#E11D2E] px-8 py-4 rounded-xl flex items-center gap-3 hover:bg-red-700 transition"
+        {/* BUY NOW */}
+        <button
+    onClick={buyNow}
+    className="border border-[#E11D2E] text-[#E11D2E] px-8 py-4 rounded-xl font-bold hover:bg-[#E11D2E] hover:text-white transition"
+>
+    Buy Now
+</button>
 
-                        >
-
-                            <ShoppingCart />
-
-                            Add To Cart
-
-                        </button>
+    </div>
+) : (
+    <button
+        disabled
+        className="bg-white/10 text-white/40 px-8 py-4 rounded-xl font-bold cursor-not-allowed"
+    >
+        SOLD OUT
+    </button>
+)}
 
                     </div>
 

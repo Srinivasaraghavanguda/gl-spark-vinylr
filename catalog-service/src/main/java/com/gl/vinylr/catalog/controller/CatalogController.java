@@ -72,6 +72,18 @@ public class CatalogController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(albumRepository.save(album));
     }
+
+    @PostMapping("/albums/bulk")
+@Transactional
+public ResponseEntity<List<Album>> addAlbums(
+        @RequestBody List<Album> albums) {
+
+    List<Album> savedAlbums = albumRepository.saveAll(albums);
+
+    return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(savedAlbums);
+}
     // ==========================
 // UPDATE ALBUM (ADMIN)
 // ==========================
@@ -125,6 +137,17 @@ public ResponseEntity<?> deleteAlbum(@PathVariable Long id) {
                     "message",
                     "Album deleted successfully"
             ));
+}
+
+@DeleteMapping("/albums/all")
+@Transactional
+public ResponseEntity<?> deleteAllAlbums() {
+
+    albumRepository.deleteAll();
+
+    return ResponseEntity.ok(
+            Map.of("message", "All albums deleted successfully")
+    );
 }
 
     // ==========================

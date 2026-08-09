@@ -6,7 +6,7 @@ spring:
     name: order-service
 
   datasource:
-    url: jdbc:h2:mem:orderdb
+    url: jdbc:h2:file:./data/orderdb
     driverClassName: org.h2.Driver
     username: sa
     password: password
@@ -24,7 +24,8 @@ spring:
 eureka:
   instance:
     hostname: localhost
-    prefer-ip-address: true
+    prefer-ip-address: false
+    instance-id: ${spring.application.name}:localhost:${server.port}
 
   client:
     service-url:

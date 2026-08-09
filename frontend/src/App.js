@@ -17,6 +17,7 @@ import AdminOrders from "./admin/AdminOrders";
 import AlbumDetails from "./pages/AlbumDetails";
 import MerchDetails from "./pages/MerchDetails";
 
+
 // ... rest of imports
 
 // The Layout handles hiding the Navbar on Entry Pages
@@ -54,6 +55,7 @@ function App() {
           <Route path="/merch" element={<Merch />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/merch/:id" element={<MerchDetails />} />
+          
 
 
           <Route path="/admin" element={<AdminDashboard />} />

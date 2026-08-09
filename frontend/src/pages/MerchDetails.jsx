@@ -99,6 +99,47 @@ export default function MerchDetails() {
 
     };
 
+
+const buyNow = () => {
+
+    if (!merch || merch.stock <= 0) {
+        toast.error("This item is sold out");
+        return;
+    }
+
+    const cart = JSON.parse(
+        localStorage.getItem("vinylr_cart") || "[]"
+    );
+
+    const cartKey = `merch-${merch.id}`;
+
+    const existing = cart.find(
+        (item) => item.cartKey === cartKey
+    );
+
+    // Add it only if it is not already in the cart
+    if (!existing) {
+        cart.push({
+            ...merch,
+            title: merch.name,
+            quantity: 1,
+            productType: "MERCH",
+            cartKey: cartKey
+        });
+
+        localStorage.setItem(
+            "vinylr_cart",
+            JSON.stringify(cart)
+        );
+
+        window.dispatchEvent(
+            new Event("cartUpdated")
+        );
+    }
+
+    navigate("/cart");
+};
+
     // ==========================
     // LOADING
     // ==========================
@@ -267,25 +308,35 @@ export default function MerchDetails() {
                         </h3>
 
 
-                        {/* ADD TO CART */}
+                       {merch.stock > 0 ? (
+    <div className="flex gap-4">
 
-                        <button
-                            onClick={addToCart}
-                            disabled={merch.stock <= 0}
-                            className={`px-8 py-4 rounded-xl flex items-center gap-3 transition ${
-                                merch.stock <= 0
-                                    ? "bg-gray-700 cursor-not-allowed"
-                                    : "bg-[#E11D2E] hover:bg-red-700"
-                            }`}
-                        >
+        {/* ADD TO CART */}
+        <button
+            onClick={addToCart}
+            className="bg-[#E11D2E] px-8 py-4 rounded-xl flex items-center gap-3 hover:bg-red-700 transition"
+        >
+            <ShoppingCart />
+            Add To Cart
+        </button>
 
-                            <ShoppingCart />
+        {/* BUY NOW */}
+        <button
+            onClick={buyNow}
+            className="border border-[#E11D2E] text-[#E11D2E] px-8 py-4 rounded-xl font-bold hover:bg-[#E11D2E] hover:text-white transition"
+        >
+            Buy Now
+        </button>
 
-                            {merch.stock <= 0
-                                ? "Sold Out"
-                                : "Add To Cart"}
-
-                        </button>
+    </div>
+) : (
+    <button
+        disabled
+        className="bg-white/10 text-white/40 px-8 py-4 rounded-xl font-bold cursor-not-allowed"
+    >
+        SOLD OUT
+    </button>
+)}
 
                     </div>
 

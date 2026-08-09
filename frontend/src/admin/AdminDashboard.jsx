@@ -45,7 +45,7 @@ export default function AdminDashboard() {
 
     return (
 
-        <div className="min-h-screen bg-[#080808] text-white p-10">
+        <div className="min-h-screen bg-[#080808] text-white pt-28 lg:pt-32 px-4 sm:px-6 lg:px-10 pb-10">
 
             <h1 className="text-5xl font-bold mb-2">
                 VinylR Admin Dashboard
