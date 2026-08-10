@@ -1267,20 +1267,12 @@ const Navbar = () => {
                     {/* Favorites */}
 
                     <button
-                      className="
-                        w-full
-                        flex
-                        items-center
-                        gap-3
-                        p-3
-                        rounded-xl
-                        hover:bg-[#E11D2E]/10
-                        text-white/45
-                        hover:text-[#FF5965]
-                        transition-colors
-                        group
-                      "
-                    >
+  onClick={() => {
+    navigate("/favorites");
+    setIsProfileOpen(false);
+  }}
+  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#E11D2E]/10 text-[#A09CA3] hover:text-[#E11D2E] transition-colors group"
+>
                       <Heart
                         className="
                           w-4
